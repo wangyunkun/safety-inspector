@@ -8,326 +8,245 @@
 <meta name="apple-mobile-web-app-title" content="安全质检">
 <meta name="theme-color" content="#1A56DB">
 <link rel="manifest" href="./manifest.json">
-<title>普洱版纳区域质量安全部</title>
+<title>普洱版纳区域质量安全检查助手 V6</title>
 <style>
 :root {
-  --primary: #1A56DB;
-  --primary-light: #EBF0FF;
-  --primary-dark: #1447b8;
-  --danger: #E02424;
-  --danger-light: #FDE8E8;
-  --success: #057A55;
-  --success-light: #DEF7EC;
-  --warning: #D03801;
-  --warning-light: #FEF3C7;
-  --caution: #B45309;
-  --caution-light: #FFFBEB;
-  --info-light: #E1EFFE;
-  --bg: #F3F4F6;
-  --surface: #FFFFFF;
-  --surface2: #F9FAFB;
-  --text-primary: #111928;
-  --text-secondary: #6B7280;
-  --text-hint: #9CA3AF;
-  --border: #E5E7EB;
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --primary:#1A56DB; --primary-light:#EBF0FF; --primary-dark:#1447b8;
+  --danger:#E02424; --danger-light:#FDE8E8;
+  --success:#057A55; --success-light:#DEF7EC;
+  --warning:#D03801; --warning-light:#FEF3C7;
+  --caution:#B45309; --caution-light:#FFFBEB;
+  --info-light:#E1EFFE;
+  --bg:#F3F4F6; --surface:#FFFFFF; --surface2:#F9FAFB;
+  --text-primary:#111928; --text-secondary:#6B7280; --text-hint:#9CA3AF;
+  --border:#E5E7EB;
+  --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
 }
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
+  font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif;
+  color:var(--text-primary)}
+#app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;
+  background:var(--bg);box-shadow:0 0 40px rgba(0,0,0,.15);position:relative}
 
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+/* TOPBAR */
+.topbar{background:var(--primary);padding:calc(var(--safe-top) + 12px) 16px 12px;
+  display:flex;align-items:center;gap:10px;flex-shrink:0;min-height:56px;z-index:10}
+.topbar h1{color:#fff;font-size:17px;font-weight:700;flex:1}
+.count-badge{background:rgba(255,255,255,.2);color:#fff;padding:4px 12px;border-radius:10px;
+  font-size:13px;font-weight:600}
+.btn-back{background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:8px;
+  padding:8px 14px;font-size:15px;font-weight:600;cursor:pointer;white-space:nowrap}
+.topbar-title{color:#fff;font-size:15px;font-weight:600;flex:1;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
 
-html, body {
-  height: 100%; width: 100%;
-  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
-  background: var(--bg);
-  overflow: hidden;
-  color: var(--text-primary);
-}
+/* VIEWS */
+.view{display:none;flex-direction:column;flex:1;overflow:hidden}
+.view.active{display:flex}
 
-#app {
-  display: flex; flex-direction: column;
-  height: 100%; max-width: 480px;
-  margin: 0 auto;
-  position: relative;
-  background: var(--bg);
-  box-shadow: 0 0 40px rgba(0,0,0,0.15);
-}
+/* SCROLL */
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.scroll-area::-webkit-scrollbar{width:0}
 
-/* ===== VIEWS ===== */
-.view { display: none; flex-direction: column; flex: 1; overflow: hidden; }
-.view.active { display: flex; }
+/* SCENE BAR */
+.scene-bar{background:var(--surface);border-bottom:1px solid var(--border);
+  padding:8px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.scene-bar label{font-size:13px;color:var(--text-secondary);white-space:nowrap}
+.scene-bar select{flex:1;height:38px;border:1.5px solid var(--border);border-radius:10px;
+  padding:0 10px;font-size:13px;background:var(--bg);color:var(--text-primary);outline:none}
 
-/* ===== TOP BAR ===== */
-.topbar {
-  background: var(--primary);
-  padding: calc(var(--safe-top) + 12px) 16px 12px;
-  display: flex; align-items: center; gap: 10px;
-  flex-shrink: 0; min-height: 56px;
-  position: relative; z-index: 10;
-}
-.topbar h1 { color: #fff; font-size: 17px; font-weight: 700; flex: 1; }
-.topbar .count-badge {
-  background: rgba(255,255,255,0.2); color: #fff;
-  padding: 4px 12px; border-radius: 10px;
-  font-size: 13px; font-weight: 600;
-}
-.btn-back {
-  background: rgba(255,255,255,0.2); color: #fff;
-  border: none; border-radius: 8px;
-  padding: 8px 14px; font-size: 15px; font-weight: 600;
-  cursor: pointer; white-space: nowrap;
-}
-.topbar-title { color: #fff; font-size: 15px; font-weight: 600; flex: 1; }
+/* BOTTOM BAR */
+.bottom-bar{background:var(--surface);border-top:1px solid var(--border);
+  padding:10px 12px calc(var(--safe-bottom) + 10px);display:flex;gap:10px;flex-shrink:0}
+.bottom-bar button{height:46px;border:none;border-radius:10px;
+  font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s}
+.bottom-bar button:active{opacity:.85;transform:scale(.97)}
+.btn-clear{background:var(--surface2);color:var(--text-secondary);
+  border:1.5px solid var(--border)!important;min-width:80px}
+.btn-copy-all{background:var(--success-light);color:var(--success);
+  border:1.5px solid var(--success)!important;min-width:100px}
+.btn-analyze{background:var(--primary);color:#fff;flex:1;font-size:15px;font-weight:700;
+  box-shadow:0 4px 14px rgba(26,86,219,.4)}
+.btn-copy-report{background:var(--primary);color:#fff;flex:1;font-size:15px;font-weight:700}
 
-/* ===== SCROLL AREA ===== */
-.scroll-area { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
-.scroll-area::-webkit-scrollbar { width: 0; }
+/* STATUS & PROGRESS */
+.status-bar{padding:3px 14px 4px;font-size:12px;color:var(--text-secondary);flex-shrink:0}
+.progress-bar{height:4px;background:var(--border);flex-shrink:0;display:none}
+.progress-fill{height:100%;background:var(--primary);width:0%;transition:width .3s}
 
-/* ===== SCENE BAR ===== */
-.scene-bar {
-  background: var(--surface); border-bottom: 1px solid var(--border);
-  padding: 8px 14px; display: flex; align-items: center; gap: 10px;
-  flex-shrink: 0;
-}
-.scene-bar label { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
-.scene-bar select {
-  flex: 1; height: 38px; border: 1.5px solid var(--border);
-  border-radius: 10px; padding: 0 10px;
-  font-size: 13px; background: var(--bg); color: var(--text-primary);
-  outline: none; cursor: pointer;
-}
+/* NAV */
+.navbar{background:var(--surface);border-top:1px solid var(--border);
+  display:flex;padding-bottom:var(--safe-bottom);flex-shrink:0}
+.nav-btn{flex:1;border:none;background:transparent;padding:8px 4px 6px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  font-size:10px;color:var(--text-hint);font-weight:500;transition:color .15s}
+.nav-btn.active{color:var(--primary);font-weight:700}
+.nav-icon{font-size:22px;line-height:1}
 
-/* ===== BOTTOM BAR ===== */
-.bottom-bar {
-  background: var(--surface); border-top: 1px solid var(--border);
-  padding: 10px 12px calc(var(--safe-bottom) + 10px);
-  display: flex; gap: 10px; flex-shrink: 0;
-}
-.bottom-bar button {
-  height: 46px; border: none; border-radius: 10px;
-  font-size: 14px; font-weight: 600; cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
-}
-.bottom-bar button:active { opacity: 0.85; transform: scale(0.97); }
-.btn-clear { background: var(--surface2); color: var(--text-secondary); border: 1.5px solid var(--border) !important; min-width: 80px; }
-.btn-copy-all { background: var(--success-light); color: var(--success); border: 1.5px solid var(--success) !important; min-width: 110px; }
-.btn-analyze { background: var(--primary); color: #fff; flex: 1; font-size: 15px; font-weight: 700; box-shadow: 0 4px 14px rgba(26,86,219,0.4); }
-.btn-copy-report { background: var(--primary); color: #fff; flex: 1; font-size: 15px; font-weight: 700; }
+/* EMPTY STATE */
+.empty-state{display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:12px;flex:1;padding:40px 20px}
+.empty-state .big-icon{font-size:64px}
+.empty-state h2{font-size:19px;font-weight:700}
+.empty-state p{font-size:14px;color:var(--text-secondary);text-align:center}
 
-/* ===== STATUS BAR ===== */
-.status-bar { padding: 3px 14px 4px; font-size: 12px; color: var(--text-secondary); flex-shrink: 0; }
-.progress-bar { height: 4px; background: var(--border); flex-shrink: 0; display: none; }
-.progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+/* TASK LIST */
+.task-list{padding:12px;display:flex;flex-direction:column;gap:8px}
+.task-row{background:var(--surface);border-radius:12px;border:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;padding:10px 14px 10px 10px;
+  cursor:pointer;transition:transform .1s}
+.task-row:active{transform:scale(.98)}
+.task-thumb{width:50px;height:50px;border-radius:8px;object-fit:cover;
+  border:1px solid var(--border);flex-shrink:0;background:var(--bg)}
+.task-info{flex:1;min-width:0}
+.task-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.task-status{font-size:12px;color:var(--text-secondary);margin-top:3px}
+.task-dot{font-size:20px;flex-shrink:0}
+.task-arrow{font-size:20px;color:var(--text-hint);flex-shrink:0}
 
-/* ===== NAV BAR ===== */
-.navbar {
-  background: var(--surface); border-top: 1px solid var(--border);
-  display: flex; padding-bottom: var(--safe-bottom);
-  flex-shrink: 0;
-}
-.nav-btn {
-  flex: 1; border: none; background: transparent;
-  padding: 8px 4px 6px; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  font-size: 10px; color: var(--text-hint); font-weight: 500;
-  transition: color 0.15s;
-}
-.nav-btn.active { color: var(--primary); font-weight: 700; }
-.nav-btn .nav-icon { font-size: 22px; line-height: 1; }
+/* RISK CARD */
+.risk-card{border-radius:14px;border:1.5px solid;padding:12px 14px;
+  cursor:pointer;transition:transform .1s;margin-bottom:10px}
+.risk-card:active{transform:scale(.99)}
+.card-header{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.card-num{width:24px;height:24px;border-radius:12px;display:flex;align-items:center;
+  justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.card-badge{padding:3px 9px;border-radius:7px;font-size:12px;font-weight:700;color:#fff}
+.card-cat{padding:3px 9px;border-radius:7px;font-size:11px;color:var(--text-secondary);
+  background:var(--surface);border:1px solid var(--border)}
+.card-actions{margin-left:auto;display:flex;gap:6px}
+.card-btn{padding:4px 10px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer}
+.card-btn:active{opacity:.7}
+.btn-edit{background:var(--info-light);color:var(--primary)}
+.btn-copy-card{background:var(--primary-light);color:var(--primary)}
+.btn-delete{background:var(--danger-light);color:var(--danger)}
+.card-issue{font-size:14px;font-weight:500;line-height:1.5;margin-bottom:6px}
+.card-hint{font-size:11px;color:var(--text-hint);font-style:italic}
+.card-divider{border:none;border-top:1px solid var(--border);margin:8px 0}
+.card-footer{display:flex;justify-content:space-between;align-items:center}
+.card-conf{font-size:11px;color:var(--text-hint)}
 
-/* ===== EMPTY STATE ===== */
-.empty-state {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 12px; flex: 1; padding: 40px 20px;
-}
-.empty-state .big-icon { font-size: 64px; }
-.empty-state h2 { font-size: 19px; font-weight: 700; color: var(--text-primary); }
-.empty-state p { font-size: 14px; color: var(--text-secondary); text-align: center; }
+/* ===== IMAGE ZOOM VIEWER ===== */
+.detail-image-wrap{background:#1F2937;flex-shrink:0;position:relative;overflow:hidden;
+  height:260px;touch-action:none;cursor:zoom-in}
+.detail-image-wrap.zoomed{cursor:move;height:100%;position:fixed;inset:0;z-index:500}
+.detail-img-inner{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden}
+.detail-img{max-width:100%;max-height:100%;object-fit:contain;display:block;
+  transform-origin:center center;transition:transform .1s;user-select:none;pointer-events:none}
+.zoom-controls{position:absolute;bottom:10px;right:10px;display:flex;gap:8px;z-index:10}
+.zoom-btn{background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:8px;
+  padding:7px 12px;font-size:14px;cursor:pointer;backdrop-filter:blur(4px)}
+.zoom-fullscreen-btn{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.55);
+  color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:14px;cursor:pointer;z-index:10}
 
-/* ===== TASK LIST ===== */
-.task-list { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-.task-row {
-  background: var(--surface); border-radius: 12px; border: 1px solid var(--border);
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 14px 10px 10px; cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s;
-}
-.task-row:active { transform: scale(0.98); }
-.task-thumb {
-  width: 50px; height: 50px; border-radius: 8px;
-  object-fit: cover; border: 1px solid var(--border);
-  flex-shrink: 0; background: var(--bg);
-}
-.task-thumb-placeholder {
-  width: 50px; height: 50px; border-radius: 8px;
-  background: var(--bg); border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; flex-shrink: 0;
-}
-.task-info { flex: 1; min-width: 0; }
-.task-name { font-size: 14px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.task-status { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
-.task-dot { font-size: 20px; flex-shrink: 0; }
-.task-arrow { font-size: 20px; color: var(--text-hint); flex-shrink: 0; }
+/* FULLSCREEN overlay */
+.fullscreen-overlay{display:none;position:fixed;inset:0;background:#000;z-index:1000;
+  touch-action:none;flex-direction:column}
+.fullscreen-overlay.open{display:flex}
+.fs-topbar{height:50px;display:flex;align-items:center;padding:0 14px;gap:10px;
+  background:rgba(0,0,0,.7);flex-shrink:0}
+.fs-close{background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;
+  padding:7px 14px;font-size:14px;cursor:pointer}
+.fs-info{color:rgba(255,255,255,.7);font-size:13px;flex:1}
+.fs-img-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  position:relative}
+.fs-img{max-width:100%;max-height:100%;object-fit:contain;
+  transform-origin:center center;user-select:none;pointer-events:none}
+.fs-zoom-bar{height:52px;display:flex;align-items:center;justify-content:center;gap:16px;
+  background:rgba(0,0,0,.7);flex-shrink:0;padding-bottom:var(--safe-bottom)}
+.fs-zoom-btn{background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:10px;
+  padding:8px 20px;font-size:15px;font-weight:700;cursor:pointer}
+.fs-zoom-label{color:#fff;font-size:14px;min-width:50px;text-align:center}
 
-/* ===== RISK CARD ===== */
-.risk-card {
-  border-radius: 14px; border: 1.5px solid; padding: 12px 14px;
-  cursor: pointer; transition: transform 0.1s;
-}
-.risk-card:active { transform: scale(0.98); }
-.card-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
-.card-num {
-  width: 24px; height: 24px; border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
-}
-.card-badge {
-  padding: 3px 9px; border-radius: 7px;
-  font-size: 12px; font-weight: 700; color: #fff;
-}
-.card-cat {
-  padding: 3px 9px; border-radius: 7px;
-  font-size: 11px; color: var(--text-secondary);
-  background: var(--surface); border: 1px solid var(--border);
-}
-.card-actions { margin-left: auto; display: flex; gap: 6px; }
-.card-btn {
-  padding: 4px 10px; border-radius: 6px; border: none;
-  font-size: 12px; font-weight: 600; cursor: pointer;
-  transition: opacity 0.15s;
-}
-.card-btn:active { opacity: 0.7; }
-.btn-edit { background: var(--info-light); color: var(--primary); }
-.btn-copy-card { background: var(--primary-light); color: var(--primary); }
-.btn-delete { background: var(--danger-light); color: var(--danger); }
-.card-issue { font-size: 14px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 6px; }
-.card-hint { font-size: 11px; color: var(--text-hint); font-style: italic; }
-.card-divider { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
-.card-footer { display: flex; justify-content: space-between; align-items: center; }
-.card-icons { display: flex; gap: 8px; }
-.card-conf { font-size: 11px; color: var(--text-hint); }
+/* STATS CARD */
+.stats-card{background:var(--surface);border-radius:12px;border:1px solid var(--border);
+  padding:14px;margin-bottom:10px}
+.stats-title{font-size:16px;font-weight:700;margin-bottom:10px}
+.stats-badges{display:flex;flex-wrap:wrap;gap:8px}
+.stat-badge{padding:5px 10px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid}
+.src-label{font-size:11px;color:var(--text-hint);padding:2px 4px}
 
-/* ===== IMAGE PREVIEW ===== */
-.detail-image {
-  background: #1F2937; height: 240px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.detail-image img { max-height: 240px; max-width: 100%; object-fit: contain; }
+/* STATE CARD */
+.state-card{background:var(--surface);border-radius:14px;border:1px solid var(--border);
+  padding:40px 20px;display:flex;flex-direction:column;align-items:center;
+  gap:10px;text-align:center;margin:12px}
+.state-icon{font-size:48px}
+.state-title{font-size:17px;font-weight:700}
+.state-sub{font-size:13px;color:var(--text-secondary)}
 
-/* ===== SUMMARY STATS ===== */
-.stats-card {
-  background: var(--surface); border-radius: 12px; border: 1px solid var(--border);
-  padding: 14px; margin-bottom: 10px;
-}
-.stats-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
-.stats-badges { display: flex; flex-wrap: wrap; gap: 8px; }
-.stat-badge {
-  padding: 5px 10px; border-radius: 8px;
-  font-size: 12px; font-weight: 600; border: 1px solid;
-}
-.src-label { font-size: 11px; color: var(--text-hint); padding: 2px 4px; }
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);
+  display:none;align-items:flex-end;justify-content:center;z-index:2000;backdrop-filter:blur(2px)}
+.modal-overlay.open{display:flex}
+.modal-sheet{background:var(--surface);border-radius:24px 24px 0 0;
+  width:100%;max-width:480px;max-height:90vh;
+  padding:20px 20px calc(var(--safe-bottom) + 20px);overflow-y:auto;
+  animation:slideUp .25s cubic-bezier(.25,.46,.45,.94)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:16px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;font-weight:700;color:var(--text-hint);margin-bottom:6px;
+  display:block;letter-spacing:.5px}
+.form-input,.form-select,.form-textarea{width:100%;border:1.5px solid var(--border);
+  border-radius:10px;padding:10px 12px;font-size:14px;background:var(--bg);
+  color:var(--text-primary);outline:none;font-family:inherit}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--primary)}
+.form-textarea{resize:none;min-height:80px}
+.form-actions{display:flex;gap:10px;margin-top:16px}
+.form-actions button{flex:1;height:46px;border-radius:10px;border:none;
+  font-size:15px;font-weight:600;cursor:pointer}
+.btn-cancel{background:var(--surface2);color:var(--text-secondary);
+  border:1.5px solid var(--border)!important}
+.btn-save{background:var(--primary);color:#fff}
+.btn-close-modal{background:var(--primary);color:#fff;width:100%;height:46px;
+  border-radius:10px;border:none;font-size:15px;font-weight:600;cursor:pointer;margin-top:16px}
+.detail-section{background:var(--surface);border-radius:12px;border:1px solid var(--border);
+  padding:14px;margin-bottom:10px}
+.detail-section-title{font-size:13px;font-weight:700;color:var(--text-secondary);margin-bottom:8px}
+.detail-section-body{font-size:14px;line-height:1.6}
 
-/* ===== STATE CARDS ===== */
-.state-card {
-  background: var(--surface); border-radius: 14px; border: 1px solid var(--border);
-  padding: 40px 20px; display: flex; flex-direction: column;
-  align-items: center; gap: 10px; text-align: center;
-}
-.state-icon { font-size: 48px; }
-.state-title { font-size: 17px; font-weight: 700; }
-.state-sub { font-size: 13px; color: var(--text-secondary); }
+/* SETTINGS */
+.settings-section{background:var(--surface);border-radius:14px;overflow:hidden;margin-bottom:12px}
+.settings-item{padding:14px 16px;display:flex;align-items:center;gap:12px;
+  border-bottom:1px solid var(--bg)}
+.settings-item:last-child{border-bottom:none}
+.settings-icon{font-size:20px;flex-shrink:0}
+.settings-label{font-size:14px;font-weight:600;color:var(--text-primary);flex:1}
+.settings-input{flex:1;border:1.5px solid var(--border);border-radius:10px;
+  padding:8px 12px;font-size:14px;background:var(--bg);outline:none;font-family:inherit}
+.settings-input:focus{border-color:var(--primary)}
+.settings-select{flex:1;border:1.5px solid var(--border);border-radius:10px;
+  padding:8px 12px;font-size:14px;background:var(--bg);outline:none}
+.settings-save{width:100%;height:48px;background:var(--primary);color:#fff;
+  border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;
+  box-shadow:0 4px 14px rgba(26,86,219,.3)}
 
-/* ===== MODAL OVERLAY ===== */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-  display: none; align-items: flex-end; justify-content: center;
-  z-index: 1000; backdrop-filter: blur(2px);
-}
-.modal-overlay.open { display: flex; }
-.modal-sheet {
-  background: var(--surface); border-radius: 24px 24px 0 0;
-  width: 100%; max-width: 480px; max-height: 90vh;
-  padding: 20px 20px calc(var(--safe-bottom) + 20px);
-  overflow-y: auto;
-  animation: slideUp 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-.modal-handle {
-  width: 40px; height: 4px; background: var(--border);
-  border-radius: 2px; margin: 0 auto 16px;
-}
-.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
-
-/* ===== FORM ELEMENTS ===== */
-.form-group { margin-bottom: 14px; }
-.form-label { font-size: 12px; font-weight: 700; color: var(--text-hint); margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
-.form-input, .form-select, .form-textarea {
-  width: 100%; border: 1.5px solid var(--border);
-  border-radius: 10px; padding: 10px 12px;
-  font-size: 14px; background: var(--bg);
-  color: var(--text-primary); outline: none;
-  transition: border-color 0.15s;
-  font-family: inherit;
-}
-.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--primary); }
-.form-textarea { resize: none; min-height: 80px; }
-.form-actions { display: flex; gap: 10px; margin-top: 16px; }
-.form-actions button { flex: 1; height: 46px; border-radius: 10px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; }
-.btn-cancel { background: var(--surface2); color: var(--text-secondary); border: 1.5px solid var(--border) !important; }
-.btn-save { background: var(--primary); color: #fff; }
-.btn-close-modal { background: var(--primary); color: #fff; width: 100%; height: 46px; border-radius: 10px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 16px; }
-
-/* ===== DETAIL SECTION ===== */
-.detail-section {
-  background: var(--surface); border-radius: 12px; border: 1px solid var(--border);
-  padding: 14px; margin-bottom: 10px;
-}
-.detail-section-title { font-size: 13px; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; }
-.detail-section-body { font-size: 14px; color: var(--text-primary); line-height: 1.6; }
-
-/* ===== TOAST ===== */
-.toast {
-  position: fixed; bottom: calc(var(--safe-bottom) + 80px); left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background: rgba(0,0,0,0.8); color: #fff;
-  padding: 10px 20px; border-radius: 24px;
-  font-size: 14px; white-space: nowrap;
-  opacity: 0; transition: all 0.25s; pointer-events: none;
-  z-index: 9999; max-width: 90vw;
-}
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-/* ===== CAMERA BUTTON ===== */
-.add-btn-group {
-  display: flex; gap: 8px; flex-direction: column; padding: 12px;
-}
-.add-source-btn {
-  height: 52px; border-radius: 12px; border: 1.5px dashed var(--border);
-  background: var(--surface); color: var(--text-primary);
-  font-size: 15px; font-weight: 600; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  transition: background 0.15s, border-color 0.15s;
-}
-.add-source-btn:active { background: var(--primary-light); border-color: var(--primary); }
+/* TOAST */
+.toast{position:fixed;bottom:calc(var(--safe-bottom) + 80px);left:50%;
+  transform:translateX(-50%) translateY(20px);background:rgba(0,0,0,.8);color:#fff;
+  padding:10px 20px;border-radius:24px;font-size:14px;white-space:nowrap;
+  opacity:0;transition:all .25s;pointer-events:none;z-index:9999;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- ============ HOME VIEW ============ -->
+  <!-- HOME VIEW -->
   <div class="view active" id="view-home">
     <div class="topbar">
-      <h1>🏗️ 安全质检助手</h1>
+      <h1>🏗️ 安全质量检查AI V6</h1>
       <span class="count-badge" id="count-badge">0/20</span>
     </div>
     <div class="scene-bar">
       <label>检查场景</label>
       <select id="prompt-select">
-        <option value="dual">V4.6 安全质量双聚焦</option>
+        <option value="dual">V6 安全质量双聚焦</option>
         <option value="safety">安全隐患专项</option>
         <option value="quality">质量问题专项</option>
+        <option value="critical">高危风险筛查</option>
       </select>
     </div>
     <div class="scroll-area" id="home-scroll">
@@ -347,32 +266,68 @@ html, body {
     <div class="status-bar" id="status-bar">就绪</div>
   </div>
 
-  <!-- ============ SUMMARY VIEW ============ -->
+  <!-- SUMMARY VIEW -->
   <div class="view" id="view-summary">
     <div class="topbar"><h1>📊 问题汇总</h1></div>
-    <div class="scroll-area" id="summary-scroll">
-      <div style="padding:12px" id="summary-content"></div>
-    </div>
+    <div class="scroll-area"><div style="padding:12px" id="summary-content"></div></div>
     <div class="bottom-bar">
       <button class="btn-copy-report" onclick="copyAll()">📋 复制全部问题</button>
     </div>
   </div>
 
-  <!-- ============ DETAIL VIEW ============ -->
+  <!-- DETAIL VIEW -->
   <div class="view" id="view-detail">
     <div class="topbar">
       <button class="btn-back" onclick="closeDetail()">‹ 返回</button>
       <span class="topbar-title" id="detail-title"></span>
     </div>
-    <div class="detail-image" id="detail-image-wrap">
-      <img id="detail-img" src="" alt="">
+    <!-- 图片区域（带缩放） -->
+    <div class="detail-image-wrap" id="detail-image-wrap">
+      <div class="detail-img-inner" id="detail-img-inner">
+        <img id="detail-img" src="" alt="" class="detail-img">
+      </div>
+      <div class="zoom-controls">
+        <button class="zoom-btn" onclick="zoomOut()">－</button>
+        <button class="zoom-btn" id="zoom-label">100%</button>
+        <button class="zoom-btn" onclick="zoomIn()">＋</button>
+      </div>
+      <button class="zoom-fullscreen-btn" onclick="openFullscreen()">⛶ 全屏</button>
     </div>
     <div class="scroll-area">
       <div style="padding:12px" id="detail-content"></div>
     </div>
   </div>
 
-  <!-- ============ NAV BAR ============ -->
+  <!-- SETTINGS VIEW -->
+  <div class="view" id="view-settings">
+    <div class="topbar"><h1>⚙️ 设置</h1></div>
+    <div class="scroll-area">
+      <div style="padding:14px;display:flex;flex-direction:column;gap:12px">
+        <div class="settings-section">
+          <div class="settings-item">
+            <span class="settings-icon">🔑</span>
+            <span class="settings-label">API Key</span>
+            <input type="password" class="settings-input" id="s-apikey" placeholder="粘贴 API Key">
+          </div>
+          <div class="settings-item">
+            <span class="settings-icon">🤖</span>
+            <span class="settings-label">模型</span>
+            <select class="settings-select" id="s-provider">
+              <option value="qwen2.5-vl-72b">阿里百炼 Qwen2.5-VL (推荐)</option>
+              <option value="qwen-vl-max">阿里百炼 Qwen-VL-Max</option>
+              <option value="siliconflow">硅基流动 Qwen2-VL</option>
+            </select>
+          </div>
+        </div>
+        <button class="settings-save" onclick="saveSettings()">💾 保存设置</button>
+        <div style="text-align:center;font-size:12px;color:var(--text-hint);line-height:1.6">
+          API Key 仅保存在您的设备本地<br>不上传任何服务器
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAV -->
   <nav class="navbar">
     <button class="nav-btn active" id="nav-home" onclick="switchTab(0)">
       <span class="nav-icon">🏠</span>主页
@@ -383,50 +338,46 @@ html, body {
     <button class="nav-btn" id="nav-add" onclick="showAddMenu()">
       <span class="nav-icon">➕</span>添加
     </button>
-    <button class="nav-btn" id="nav-settings" onclick="openSettings()">
+    <button class="nav-btn" id="nav-settings" onclick="switchTab(3)">
       <span class="nav-icon">⚙️</span>设置
     </button>
   </nav>
 </div>
 
-<!-- ============ ADD MENU MODAL ============ -->
+<!-- FULLSCREEN VIEWER -->
+<div class="fullscreen-overlay" id="fullscreen-overlay">
+  <div class="fs-topbar">
+    <button class="fs-close" onclick="closeFullscreen()">✕ 关闭</button>
+    <span class="fs-info" id="fs-info">双指缩放 / 按钮缩放</span>
+  </div>
+  <div class="fs-img-wrap" id="fs-img-wrap">
+    <img class="fs-img" id="fs-img" src="" alt="">
+  </div>
+  <div class="fs-zoom-bar">
+    <button class="fs-zoom-btn" onclick="fsZoom(-0.25)">－</button>
+    <span class="fs-zoom-label" id="fs-zoom-label">100%</span>
+    <button class="fs-zoom-btn" onclick="fsZoom(+0.25)">＋</button>
+    <button class="fs-zoom-btn" onclick="fsReset()">重置</button>
+  </div>
+</div>
+
+<!-- ADD MENU MODAL -->
 <div class="modal-overlay" id="modal-add" onclick="closeModal('modal-add')">
   <div class="modal-sheet" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
     <div class="modal-title">添加图片</div>
     <div style="display:flex;flex-direction:column;gap:10px">
-      <button class="add-source-btn" onclick="pickFiles('camera')">📷 拍照</button>
-      <button class="add-source-btn" onclick="pickFiles('gallery')">🖼️ 从相册选择</button>
-      <button class="add-source-btn" onclick="pickFiles('file')">📁 从文件选择</button>
+      <button style="height:52px;border-radius:12px;border:1.5px dashed var(--border);
+        background:var(--surface);font-size:15px;font-weight:600;cursor:pointer"
+        onclick="pickFiles('camera');closeModal('modal-add')">📷 拍照</button>
+      <button style="height:52px;border-radius:12px;border:1.5px dashed var(--border);
+        background:var(--surface);font-size:15px;font-weight:600;cursor:pointer"
+        onclick="pickFiles('gallery');closeModal('modal-add')">🖼️ 从相册选择</button>
     </div>
   </div>
 </div>
 
-<!-- ============ SETTINGS MODAL ============ -->
-<div class="modal-overlay" id="modal-settings" onclick="closeModal('modal-settings')">
-  <div class="modal-sheet" onclick="event.stopPropagation()">
-    <div class="modal-handle"></div>
-    <div class="modal-title">⚙️ 设置</div>
-    <div class="form-group">
-      <label class="form-label">🔑 API KEY</label>
-      <input type="password" class="form-input" id="input-apikey" placeholder="粘贴您的 API Key...">
-    </div>
-    <div class="form-group">
-      <label class="form-label">🤖 模型厂商</label>
-      <select class="form-select" id="input-provider">
-        <option value="qwen-vl-max">阿里百炼 (Qwen-VL-Max)</option>
-        <option value="qwen2.5-vl-72b">阿里百炼 (Qwen2.5-VL)</option>
-        <option value="siliconflow-qwen2">硅基流动 (Qwen2-VL)</option>
-      </select>
-    </div>
-    <div class="form-actions">
-      <button class="btn-cancel" onclick="closeModal('modal-settings')">取消</button>
-      <button class="btn-save" onclick="saveSettings()">保存</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============ EDIT MODAL ============ -->
+<!-- EDIT MODAL -->
 <div class="modal-overlay" id="modal-edit" onclick="closeModal('modal-edit')">
   <div class="modal-sheet" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
@@ -434,10 +385,8 @@ html, body {
     <div class="form-group">
       <label class="form-label">风险等级</label>
       <select class="form-select" id="edit-level">
-        <option>严重安全隐患</option>
-        <option>一般安全隐患</option>
-        <option>严重质量缺陷</option>
-        <option>一般质量缺陷</option>
+        <option>严重安全隐患</option><option>一般安全隐患</option>
+        <option>严重质量缺陷</option><option>一般质量缺陷</option>
       </select>
     </div>
     <div class="form-group">
@@ -459,7 +408,7 @@ html, body {
   </div>
 </div>
 
-<!-- ============ DETAIL MODAL ============ -->
+<!-- DETAIL MODAL -->
 <div class="modal-overlay" id="modal-detail" onclick="closeModal('modal-detail')">
   <div class="modal-sheet" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
@@ -468,117 +417,424 @@ html, body {
   </div>
 </div>
 
-<!-- ============ TOAST ============ -->
-<div class="toast" id="toast"></div>
-
-<!-- ============ HIDDEN FILE INPUTS ============ -->
+<!-- FILE INPUTS -->
 <input type="file" id="file-camera" accept="image/*" capture="environment" multiple style="display:none" onchange="handleFiles(this.files)">
 <input type="file" id="file-gallery" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
 
+<div class="toast" id="toast"></div>
+
 <script>
 // =============================================
-// 全局配置（完整保留业务逻辑）
+// V6 完整知识库（对标 v4.6 提示词）
 // =============================================
-const MAX_IMAGES = 20;
-
-const PROVIDER_PRESETS = {
-  'qwen-vl-max': { base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-vl-max' },
-  'qwen2.5-vl-72b': { base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen2.5-vl-72b' },
-  'siliconflow-qwen2': { base_url: 'https://api.siliconflow.cn/v1', model: 'Qwen/Qwen2-VL-72B-Instruct' }
+const PROVIDERS = {
+  'qwen2.5-vl-72b': {url:'https://dashscope.aliyuncs.com/compatible-mode/v1', model:'qwen2.5-vl-72b'},
+  'qwen-vl-max':    {url:'https://dashscope.aliyuncs.com/compatible-mode/v1', model:'qwen-vl-max'},
+  'siliconflow':    {url:'https://api.siliconflow.cn/v1', model:'Qwen/Qwen2-VL-72B-Instruct'}
 };
 
 const RISK_STYLE = {
-  '严重安全隐患': { bg: '#FDE8E8', border: '#E02424', icon: '🔴', priority: 0 },
-  '一般安全隐患': { bg: '#FEF3C7', border: '#D03801', icon: '🟠', priority: 1 },
-  '严重质量缺陷': { bg: '#FFFBEB', border: '#B45309', icon: '🟡', priority: 2 },
-  '一般质量缺陷': { bg: '#E1EFFE', border: '#1A56DB', icon: '🔵', priority: 3 }
+  '严重安全隐患':{bg:'#FDE8E8',border:'#E02424',icon:'🔴',priority:0},
+  '一般安全隐患':{bg:'#FEF3C7',border:'#D03801',icon:'🟠',priority:1},
+  '严重质量缺陷':{bg:'#FFFBEB',border:'#B45309',icon:'🟡',priority:2},
+  '一般质量缺陷':{bg:'#E1EFFE',border:'#1A56DB',icon:'🔵',priority:3}
 };
 
 const REGULATION_DB = {
-  '安全': {
-    role_desc: '注册安全工程师 | 30 年经验',
-    critical_hazards: ['高处作业不系安全带','安全帽未系下颌带','临边洞口防护缺失','使用挖掘机吊装'],
-    checklist: ['【一眼识别】安全帽：未系下颌带立即报告','【一眼识别】安全带：2m 以上无安全带立即报告','【一眼识别】临边防护：无 1.2m 护栏立即报告'],
-    anti_hallucination: '管理人员在安全通道内检查可短时摘帽；地面作业不强制系安全带。'
+  '安全':{
+    role_desc:'注册安全工程师 | 30年施工现场安全管理经验',
+    critical_hazards:[
+      '【致命】使用非吊装机械进行吊装作业（挖掘机、装载机、汽车吊等违章吊装）',
+      '高处作业(2m以上)不系安全带或低挂高用',
+      '安全帽未系下颌带或佩戴不合格安全帽',
+      '临边洞口防护缺失或防护不牢固',
+      '脚手架未满铺脚手板或探头板',
+      '安全网破损、老化、未系挂',
+      '起重机械作业区域无警戒、无人监护'
+    ],
+    checklist:[
+      '【一眼识别】安全帽：未系下颌带立即报告，帽壳裂纹立即更换',
+      '【一眼识别】安全带：2m以上无安全带或低挂高用立即报告',
+      '【一眼识别】临边防护：无1.2m护栏立即报告',
+      '【一眼识别】洞口防护：无盖板或盖板不固定立即报告',
+      '【一眼识别】脚手板：未满铺、有探头板立即报告',
+      '【工艺检查】安全网：破损、老化、未系满立即报告',
+      '【工艺检查】防护栏杆：上杆1.2m、下杆0.6m、挡脚板180mm'
+    ],
+    must_report_if:[
+      '发现安全带挂在不牢固构件上',
+      '发现安全防护设施被拆除或挪作他用',
+      '发现工人酒后上岗',
+      '发现特种作业无证操作',
+      '发现安全警示标志缺失'
+    ],
+    norms:`JGJ 59-2011《建筑施工安全检查标准》
+第3.2.5条 进入施工现场必须正确佩戴安全帽，系好下颌带。
+第5.1.1条 高处作业(2m及以上)必须系安全带，安全带必须高挂低用。
+第3.13.3条 楼梯口、电梯井口、通道口、预留洞口必须设置防护栏杆或盖板。`,
+    anti_hallucination:'管理人员在安全通道内检查可短时摘帽；地面作业不强制系安全带；休息区可不戴安全帽。'
   },
-  '机械': {
-    role_desc: '起重机械专家 | 30 年经验',
-    critical_hazards: ['【致命】使用挖掘机吊装','塔吊限制器失效或被短接','钢丝绳断丝超过10%','施工升降机防坠安全器失效'],
-    checklist: ['【一眼识别】吊装设备：挖掘机、装载机吊物立即报告','【一眼识别】限位器：查看是否有线头短接','【一眼识别】钢丝绳：断丝断股立即报告'],
-    anti_hallucination: '停工状态吊钩无荷载正常；设备表面轻微锈迹不是缺陷。'
+  '机械':{
+    role_desc:'起重机械专家 | 30年塔吊施工升降机安拆经验',
+    critical_hazards:[
+      '【致命】使用非吊装机械进行吊装作业（如用挖掘机、装载机吊物）',
+      '【致命】塔吊力矩限制器、起重量限制器失效或被短接',
+      '【致命】施工升降机防坠安全器过期或失效',
+      '钢丝绳一个节距内断丝超过10%继续使用',
+      '起重机械未经检测验收继续使用',
+      '特种作业人员无证操作'
+    ],
+    checklist:[
+      '【一眼识别】吊装设备：挖掘机、装载机吊物立即报告（致命违章）',
+      '【一眼识别】限位器：查看是否有线头短接、拆除，失效立即报告',
+      '【一眼识别】钢丝绳：断丝、断股、死弯、压扁立即报告',
+      '【一眼识别】吊钩：防脱钩装置缺失或损坏立即报告',
+      '【工艺检查】标准节螺栓：松动立即报告',
+      '【工艺检查】附墙装置：间距符合说明书',
+      '【资料检查】验收标牌：查看设备验收合格证'
+    ],
+    must_report_if:[
+      '发现起重机械超负荷使用',
+      '发现多塔作业无防碰撞措施',
+      '发现塔吊回转范围内有高压线无防护',
+      '发现施工升降机门联锁失效',
+      '发现机械设备带病运转'
+    ],
+    norms:`GB 5144-2006《塔式起重机安全规程》
+第6.1.1条 塔吊必须装设力矩限制器、起重量限制器、高度限位器、幅度限位器。
+第7.2.1条 钢丝绳报废：一个节距内断丝数超过总丝数10%。
+JGJ 33-2012《建筑机械使用安全技术规程》
+第4.1.14条 严禁使用挖掘机、装载机进行吊装作业。`,
+    anti_hallucination:'停工状态吊钩无荷载正常；设备表面轻微锈迹不是缺陷；临时停放不是故障。'
   },
-  '电气': {
-    role_desc: '注册电气工程师 | 30 年经验',
-    critical_hazards: ['临时用电未采用TN-S系统','配电箱未做重复接地','一闸多机','电缆直接拖地或浸水'],
-    checklist: ['【一眼识别】电线颜色：黄绿双色只能是PE线','【一眼识别】配电箱门：必须有跨接软铜线','【一眼识别】插座接线：左零右火上接地'],
-    anti_hallucination: '施工中临时接线待整理正常；备用回路不是故障。'
+  '电气':{
+    role_desc:'注册电气工程师 | 30年变配电及施工现场经验',
+    critical_hazards:[
+      '临时用电未采用TN-S接零保护系统',
+      '配电箱未做重复接地或接地电阻大于10Ω',
+      '一闸多机（一个开关控制多台设备）',
+      '电缆直接拖地或浸水',
+      '带电体裸露无防护罩',
+      '使用铜丝、铁丝代替熔断器熔体'
+    ],
+    checklist:[
+      '【一眼识别】电线颜色：黄绿双色只能是PE线，用作他途立即报告',
+      '【一眼识别】配电箱门：必须有跨接软铜线，缺失立即报告',
+      '【一眼识别】插座接线：左零右火上接地，接反立即报告',
+      '【一眼识别】电缆敷设：直接拖地、过路无保护管立即报告',
+      '【工艺检查】箱内接线：一机一闸一漏一箱，多机共用开关立即报告',
+      '【工艺检查】漏电保护：测试漏保按钮，不动作立即报告',
+      '【设备检查】配电箱标识：必须有一机一闸标识、责任人'
+    ],
+    must_report_if:[
+      '发现电线绝缘层破损、老化开裂',
+      '发现开关箱内积尘、积水或有异物',
+      '发现漏电保护器失效或拆除',
+      '发现电缆接头裸露无绝缘包扎',
+      '发现配电箱未上锁或箱门缺失'
+    ],
+    norms:`JGJ 46-2005《施工现场临时用电安全技术规范》
+第8.1.3条 每台用电设备必须有各自专用的开关箱，严禁一闸多机。
+第5.1.1条 临时用电必须采用TN-S接零保护系统，三级配电两级保护。
+GB 50303-2015《建筑电气工程施工质量验收规范》
+第14.1.1条 箱内PE线必须通过汇流排连接，严禁串联。`,
+    anti_hallucination:'施工中临时接线待整理正常；旧规范PE线可能不是黄绿双色；备用回路不是故障。'
   },
-  '管道': {
-    role_desc: '管道工艺专家 | 30 年经验',
-    critical_hazards: ['压力管道使用排水管','阀门无标识或标识错误','法兰垫片使用错误'],
-    checklist: ['【一眼识别】管道颜色：红色消防、绿色给水、蓝色排水、黄色燃气','【一眼识别】法兰螺栓：必须露出2-3扣'],
-    anti_hallucination: '临时封堵盲板不是缺阀门；试压用临时支撑不是支架不足。'
+  '结构':{
+    role_desc:'结构总工程师 | 30年混凝土及钢结构经验',
+    critical_hazards:[
+      '模板支撑体系立杆悬空或垫板缺失',
+      '高大模板未设置扫地杆、剪刀撑',
+      '钢筋主筋位置错误（梁底筋放成面筋）',
+      '混凝土浇筑后出现贯穿裂缝',
+      '钢结构高强螺栓未终拧或梅花头未拧掉',
+      '后浇带提前拆除支撑'
+    ],
+    checklist:[
+      '【一眼识别】立杆底部：悬空、无垫板、垫板破裂立即报告',
+      '【一眼识别】钢筋间距：明显不均匀或露筋立即报告',
+      '【一眼识别】混凝土裂缝：宽度超0.3mm或贯穿性裂缝立即报告',
+      '【一眼识别】模板变形：鼓胀、扭曲、下沉立即报告',
+      '【工艺检查】钢筋绑扎：梁柱节点核心区箍筋不得遗漏',
+      '【工艺检查】保护层垫块：每平方米不少于1块',
+      '【材料检查】钢筋锈蚀：表面锈皮脱落、出现麻坑不得使用'
+    ],
+    must_report_if:[
+      '发现模板支撑立杆间距大于方案要求',
+      '发现梁底模板下挠或支撑松动',
+      '发现钢筋规格型号与设计不符',
+      '发现混凝土蜂窝、孔洞、夹渣',
+      '发现钢结构涂装漏涂、返锈'
+    ],
+    norms:`GB 50204-2015《混凝土结构工程施工质量验收规范》
+第5.5.1条 钢筋保护层厚度：梁类+10/-7mm，合格率90%以上。
+JGJ 162-2008《建筑施工模板安全技术规范》
+第6.1.2条 模板支架立杆底部必须设置垫板，严禁悬空，垫板厚度≥50mm。
+第6.2.4条 满堂模板支架每隔四排立杆设置纵向剪刀撑。`,
+    anti_hallucination:'未抹面不是不平整；待绑扎区域钢筋散乱正常；温度裂缝(发丝状)不是结构裂缝。'
   },
-  '结构': {
-    role_desc: '结构总工程师 | 30 年经验',
-    critical_hazards: ['模板支撑立杆悬空或无垫板','高大模板未设置扫地杆剪刀撑','混凝土浇筑后出现贯穿裂缝'],
-    checklist: ['【一眼识别】立杆底部：悬空、无垫板立即报告','【一眼识别】混凝土裂缝：宽度超0.3mm立即报告'],
-    anti_hallucination: '未抹面不是不平整；温度裂缝（发丝状）不是结构裂缝。'
+  '基坑':{
+    role_desc:'岩土工程师 | 30年深基坑支护及降水经验',
+    critical_hazards:[
+      '基坑开挖超过5m无专项方案或未按方案支护',
+      '基坑边堆载超过设计荷载（堆土、堆料、机械）',
+      '支护结构出现裂缝、位移、渗漏',
+      '上下基坑无专用通道或通道设置不合理',
+      '基坑监测数据超预警值未停工'
+    ],
+    checklist:[
+      '【一眼识别】坑边堆载：坑边1m内有堆土、堆料立即报告',
+      '【一眼识别】临边防护：无1.2m护栏或护栏损坏立即报告',
+      '【一眼识别】支护裂缝：喷锚面裂缝宽度超5mm立即报告',
+      '【一眼识别】坑底积水：大面积积水或管涌立即报告',
+      '【工艺检查】放坡坡度：土质松软地区放坡不足立即报告',
+      '【工艺检查】排水沟：基坑顶截水沟、底排水沟是否畅通'
+    ],
+    must_report_if:[
+      '发现支护结构有明显位移或变形',
+      '发现基坑周边地面开裂',
+      '发现降水井出水量突然减少或浑浊',
+      '发现基坑监测数据连续超预警值'
+    ],
+    norms:`JGJ 120-2012《建筑基坑支护技术规程》
+第8.1.1条 基坑周边1m范围内不得堆载，3m内堆载不超设计荷载。
+JGJ 59-2011《建筑施工安全检查标准》
+第3.11.3条 基坑开挖深度超2m必须设置1.2m高防护栏杆。`,
+    anti_hallucination:'雨后坑边少量积水及时抽排正常；支护表面轻微渗水不是渗漏；临时堆土待运不是违规。'
+  },
+  '消防':{
+    role_desc:'注册消防工程师 | 30年施工现场消防管理经验',
+    critical_hazards:[
+      '氧气瓶与乙炔瓶混放或间距不足5m',
+      '气瓶距离明火作业点不足10m',
+      '气瓶无防震圈、防倾倒措施',
+      '动火作业无监护人、无灭火器材',
+      '消防通道堵塞、消防水源不足'
+    ],
+    checklist:[
+      '【一眼识别】气瓶间距：氧气乙炔瓶距离小于5m立即报告',
+      '【一眼识别】气瓶状态：横放、暴晒、无防震圈立即报告',
+      '【一眼识别】动火监护：无监护人、无灭火器立即报告',
+      '【一眼识别】消防通道：被材料堵塞立即报告',
+      '【工艺检查】灭火器配置：每50㎡不少于2具，压力指针在绿区'
+    ],
+    must_report_if:[
+      '发现乙炔瓶卧放使用',
+      '发现气瓶软管破损、接头漏气',
+      '发现灭火器过期或压力不足',
+      '发现电焊作业无接火盆、防火毯'
+    ],
+    norms:`GB 50720-2011《建设工程施工现场消防安全技术规范》
+第5.3.7条 氧气瓶与乙炔瓶工作间距≥5m，与明火距离≥10m。
+第6.3.1条 动火作业必须办理动火许可证，设专人监护。
+第4.2.1条 消防车道宽度不小于4m，不得堆放材料。`,
+    anti_hallucination:'空瓶待运可横放；少量油漆当天用完可暂存；食堂用火有专人管理不是违规。'
+  },
+  '管道':{
+    role_desc:'管道与阀门工艺专家 | 30年压力管道安装经验',
+    critical_hazards:[
+      '压力管道使用非压力管道管材（如排水管代替给水管）',
+      '阀门无标识或标识错误（介质流向、压力等级）',
+      '法兰垫片使用错误（石棉垫片用于高温高压）',
+      '管道支吊架间距过大导致管道下垂',
+      '焊缝有裂纹、未熔合、夹渣、气孔'
+    ],
+    checklist:[
+      '【一眼识别】管道颜色：红色消防、绿色给水、蓝色排水、黄色燃气',
+      '【一眼识别】法兰螺栓：必须露出2-3扣，少于2扣未紧固',
+      '【一眼识别】阀门手轮方向：向上或向外正确，向下错误',
+      '【工艺检查】支吊架间距：DN50不超5m，DN100不超6m',
+      '【工艺检查】焊缝外观：无裂纹、未熔合、夹渣、气孔',
+      '【材料检查】管材标识：压力管道必须有GB/T编号和钢号'
+    ],
+    must_report_if:[
+      '发现管道有凹陷、裂纹、严重腐蚀',
+      '发现法兰垫片外露不均匀或偏置',
+      '发现阀门铭牌缺失或模糊不清',
+      '发现不同材质管道直接焊接无过渡件'
+    ],
+    norms:`GB 50242-2002《建筑给水排水及采暖工程施工质量验收规范》
+第3.3.13条 法兰螺栓紧固后露出螺母2-3扣，垫片不突入管内。
+第3.3.15条 阀门安装前必须做强度和严密性试验，安装方向正确。`,
+    anti_hallucination:'临时封堵盲板不是缺阀门；试压用临时支撑不是支架不足；保温层保护板接缝不是裂缝。'
+  },
+  '暖通':{
+    role_desc:'暖通工程师 | 30年通风空调及采暖经验',
+    critical_hazards:[
+      '风管穿越防火分区未设防火阀',
+      '排烟管道未做独立支吊架',
+      '空调冷热水管道保温层破损结露',
+      '风机盘管冷凝水管倒坡'
+    ],
+    checklist:[
+      '【一眼识别】风管支吊架：间距过大立即报告',
+      '【一眼识别】保温层：破损、脱落、结露立即报告',
+      '【一眼识别】防火阀：位置错误、无法操作立即报告',
+      '【工艺检查】法兰垫片：不得有直缝对接',
+      '【工艺检查】管道坡度：冷凝水管坡度不小于0.01'
+    ],
+    must_report_if:[
+      '发现风管漏光、漏风',
+      '发现阀门安装方向错误',
+      '发现管道穿墙无套管'
+    ],
+    norms:`GB 50243-2016《通风与空调工程施工质量验收规范》
+第6.2.3条 防火阀距墙表面距离不大于200mm，必须设独立支吊架。
+第8.2.4条 冷冻水管道保温层厚度符合设计，不得有冷桥。`,
+    anti_hallucination:'测试用临时管线；调试阶段部分阀门未开启正常。'
+  },
+  '防水':{
+    role_desc:'防水工程师 | 30年屋面及地下防水经验',
+    critical_hazards:[
+      '地下室底板防水层破损渗漏',
+      '屋面卷材搭接宽度不足',
+      '卫生间防水层未上翻或高度不足',
+      '穿墙管防水处理不当渗漏'
+    ],
+    checklist:[
+      '【一眼识别】卷材搭接：用尺量，不足100mm立即报告',
+      '【一眼识别】屋面积水：雨后积水或排水不畅立即报告',
+      '【一眼识别】渗漏痕迹：墙面水渍、发霉立即报告',
+      '【工艺检查】阴阳角：必须做圆弧处理(R=50mm)',
+      '【工艺检查】附加层：管根、地漏周围500mm范围附加层'
+    ],
+    must_report_if:[
+      '发现防水层起鼓、开裂',
+      '发现防水层裸露未保护',
+      '发现变形缝漏水'
+    ],
+    norms:`GB 50207-2012《屋面工程质量验收规范》
+第4.3.1条 卷材搭接宽度：改性沥青短边150mm，长边100mm。
+GB 50108-2008《地下工程防水技术规范》
+第4.1.7条 防水混凝土抗渗等级不低于P6，施工缝必须设止水钢板。`,
+    anti_hallucination:'防水层未做保护层前不能上人；施工缝处轻微潮湿不是渗漏。'
+  },
+  '环保':{
+    role_desc:'环境工程师 | 30年施工现场环保管理经验',
+    critical_hazards:[
+      '裸土未覆盖或覆盖不完整',
+      '施工现场未设置围挡或围挡破损',
+      '污水直排或未经沉淀排放',
+      '焚烧建筑垃圾或废弃物'
+    ],
+    checklist:[
+      '【一眼识别】裸土覆盖：绿色密目网覆盖，破损立即更换',
+      '【一眼识别】围挡：高度2.5m(市区)或1.8m(郊区)，破损修复',
+      '【一眼识别】道路硬化：主要道路必须硬化，无泥泞',
+      '【工艺检查】喷淋系统：塔吊喷淋、围挡喷淋正常运行',
+      '【工艺检查】车辆冲洗：出入口设置洗车槽'
+    ],
+    must_report_if:[
+      '发现扬尘污染严重',
+      '发现污水直排市政管网',
+      '发现夜间超时施工扰民',
+      '发现垃圾焚烧'
+    ],
+    norms:`GB 12523-2011《建筑施工场界环境噪声排放标准》
+第4.1条 噪声限值：昼间70dB，夜间55dB。
+GB 50720-2011《建设工程施工现场环境与卫生标准》
+第4.2.1条 裸露场地和集中堆放的土方应采取覆盖、固化或绿化措施。`,
+    anti_hallucination:'短时扬尘配合雾炮使用；雾天不是扬尘；少量生活垃圾分类存放待运。'
   }
 };
 
-const ROUTER_PROMPT = `你是工程建设总监。识别图片施工内容，选派2-5个专家：
-1.安全 2.机械 3.电气 4.结构 5.管道
-规则：必须包含"安全"；看到机械必须选"机械"；看到管道相关选"管道"。
-输出JSON数组，如：["机械","安全","管道"]`;
+// V6 路由提示词（对标v4.6）
+const ROUTER_PROMPT = `你是一名拥有25年经验的工程建设总监。请扫描施工现场图片，快速识别核心施工内容，指派3-5名最对口的技术专家。
 
-function buildAIPrompt(role, kb) {
-  return `你是【${role}】（${kb.role_desc}）。
-## 重大隐患清单
-${kb.critical_hazards.map(h => `- ${h}`).join('\n')}
-⚠️ 发现上述情形必须报告为"严重安全隐患"！
-## 检查清单
-${kb.checklist.join('\n')}
-## 误判警示
+必须从以下角色中选择：安全、机械、电气、结构、基坑、消防、暖通、防水、环保、管道
+
+强制规则：
+1. 始终包含"安全"专家。
+2. 如果画面模糊或无特定专业内容，仅输出["安全"]。
+3. 看到以下情形必须选"机械"：挖掘机、装载机、塔吊、施工升降机、汽车吊、吊篮、混凝土泵车。
+4. 看到电气设备、配电箱、电缆必须选"电气"。
+5. 看到模板支撑、钢筋、混凝土浇筑必须选"结构"。
+6. 看到基坑开挖、围护必须选"基坑"。
+7. 看到气瓶、动火作业必须选"消防"。
+8. 看到管道、阀门、法兰必须选"管道"。
+
+输出JSON数组，如：["机械","安全","结构"]`;
+
+// V6 专家提示词模板（完整版，对标v4.6的SPECIALIST_PROMPT_TEMPLATE_V6）
+function buildExpertPrompt(role, kb, promptMode) {
+  const criticalStr = kb.critical_hazards.map(h => `⚠️ ${h}`).join('\n');
+  const checklistStr = kb.checklist.map(c => `🔍 ${c}`).join('\n');
+  const mustReportStr = kb.must_report_if.map(m => `✅ ${m}`).join('\n');
+
+  let modeNote = '';
+  if (promptMode === 'safety') modeNote = '\n⚡ 本次任务：**仅识别安全隐患**，忽略质量问题。';
+  else if (promptMode === 'quality') modeNote = '\n⚡ 本次任务：**仅识别质量缺陷**，忽略安全隐患。';
+  else if (promptMode === 'critical') modeNote = '\n⚡ 本次任务：**仅识别严重安全隐患**，只输出risk_level为"严重安全隐患"的条目。';
+
+  return `你是一名【${role}】（${kb.role_desc}），拥有30年一线经验。你刚检查完现场，现在要写整改通知单。${modeNote}
+
+## 你的任务
+对图片进行工艺级找茬，识别具体违规事实，不是泛泛而谈。
+
+## 典型重大隐患清单（必须重点检查）
+${criticalStr}
+⚠️ 如果发现上述任一情形，必须立即报告为"严重安全隐患"！
+
+## 深度检查清单（按此逐项扫描）
+${checklistStr}
+
+## 必须报告的情形
+${mustReportStr}
+✅ 发现上述任一情形，直接报告，不要犹豫！
+
+## 核心规范依据（引用条文必须准确）
+${kb.norms}
+
+## 误判警示（以下情况不要误报）
 ${kb.anti_hallucination}
-## 输出格式（JSON数组，每项包含）
+
+## 输出格式要求（JSON数组）
+每个问题必须包含：
 - risk_level: "严重安全隐患"/"一般安全隐患"/"严重质量缺陷"/"一般质量缺陷"
-- issue: 【${role}】+ 具体描述
-- regulation: 规范条文号
-- correction: 整改措施
-- confidence: 0.0-1.0
-如无问题输出空数组[]`;
+- issue: 【${role}】+ 具体描述（说人话，不要套话）
+- regulation: 规范条文号（如"GB 50242-2002 第3.3.15条"）
+- correction: 整改措施（具体可执行，如"立即停工，更换合格管材"）
+- confidence: 0.0-1.0（不确定给0.6-0.7）
+
+输出示例：
+[
+  {
+    "risk_level": "严重安全隐患",
+    "issue": "【${role}】使用挖掘机进行吊装作业",
+    "regulation": "JGJ 33-2012 第4.1.14条",
+    "correction": "立即停止违章作业，使用合格起重设备",
+    "confidence": 0.98
+  }
+]
+
+最后强调：
+1. 不要说"可能存在""疑似"，要给出明确判断
+2. 不要说"建议"，要说"必须""立即"
+3. 问题描述要具体，如"DN100止回阀装反"而不是"阀门安装不规范"
+4. 看到典型重大隐患，必须报告为"严重安全隐患"
+5. 如果图片中确实没有${role}专业相关的问题，输出空数组[]`;
 }
 
 // =============================================
-// 状态管理
+// 状态
 // =============================================
-let tasks = [];
-let config = { api_key: '', provider: 'qwen2.5-vl-72b' };
-let currentTab = 0;
-let currentDetailTask = null;
-let editingItem = null;
-let editingTaskId = null;
-let totalAnalyzing = 0;
-let doneAnalyzing = 0;
+let tasks = [], config = {api_key:'', provider:'qwen2.5-vl-72b'};
+let currentTab = 0, currentDetailTask = null;
+let editingItem = null, editingTaskId = null;
+let totalAnalyzing = 0, doneAnalyzing = 0;
 
 // =============================================
-// 持久化配置
+// 配置
 // =============================================
 function loadConfig() {
-  try {
-    const s = localStorage.getItem('safety_config');
-    if (s) config = JSON.parse(s);
-  } catch(e) {}
-  document.getElementById('input-apikey').value = config.api_key || '';
-  document.getElementById('input-provider').value = config.provider || 'qwen2.5-vl-72b';
+  try { const s = localStorage.getItem('sc_cfg'); if(s) config = JSON.parse(s); } catch(e){}
+  document.getElementById('s-apikey').value = config.api_key||'';
+  document.getElementById('s-provider').value = config.provider||'qwen2.5-vl-72b';
 }
-
 function saveSettings() {
-  config.api_key = document.getElementById('input-apikey').value.trim();
-  config.provider = document.getElementById('input-provider').value;
-  localStorage.setItem('safety_config', JSON.stringify(config));
-  closeModal('modal-settings');
+  config.api_key = document.getElementById('s-apikey').value.trim();
+  config.provider = document.getElementById('s-provider').value;
+  localStorage.setItem('sc_cfg', JSON.stringify(config));
   showToast('✓ 设置已保存');
 }
 
@@ -587,592 +843,488 @@ function saveSettings() {
 // =============================================
 function switchTab(idx) {
   currentTab = idx;
-  ['view-home','view-summary','view-detail'].forEach((id, i) => {
-    document.getElementById(id).classList.toggle('active', false);
+  ['view-home','view-summary','view-detail','view-settings'].forEach((id,i)=>{
+    document.getElementById(id).classList.toggle('active', i===idx);
   });
-  ['nav-home','nav-summary','nav-add','nav-settings'].forEach((id, i) => {
-    document.getElementById(id).classList.toggle('active', i === idx);
+  ['nav-home','nav-summary','nav-add','nav-settings'].forEach((id,i)=>{
+    const navIdx = [0,1,99,3][i];
+    document.getElementById(id).classList.toggle('active', navIdx===idx);
   });
-  if (idx === 0) {
-    document.getElementById('view-home').classList.add('active');
-    currentDetailTask = null;
-  } else if (idx === 1) {
-    document.getElementById('view-summary').classList.add('active');
-    renderSummary();
-  }
+  if(idx===1) renderSummary();
 }
-
-function openDetail(task) {
-  currentDetailTask = task;
-  document.getElementById('detail-title').textContent = '  ' + task.name;
-  const img = document.getElementById('detail-img');
-  img.src = task.dataUrl || '';
-  document.getElementById('view-home').classList.remove('active');
-  document.getElementById('view-summary').classList.remove('active');
-  document.getElementById('view-detail').classList.add('active');
-  renderDetailContent(task);
-}
-
-function closeDetail() {
-  document.getElementById('view-detail').classList.remove('active');
-  if (currentTab === 0) document.getElementById('view-home').classList.add('active');
-  else if (currentTab === 1) {
-    document.getElementById('view-summary').classList.add('active');
-    renderSummary();
-  }
-  currentDetailTask = null;
-}
+function showAddMenu() { openModal('modal-add'); }
+function openSettings() { switchTab(3); }
 
 // =============================================
 // 文件处理
 // =============================================
-function showAddMenu() {
-  openModal('modal-add');
+function pickFiles(src) {
+  if(src==='camera') document.getElementById('file-camera').click();
+  else document.getElementById('file-gallery').click();
 }
-
-function pickFiles(source) {
-  closeModal('modal-add');
-  if (source === 'camera') {
-    document.getElementById('file-camera').click();
-  } else {
-    document.getElementById('file-gallery').click();
-  }
-}
-
 function handleFiles(files) {
-  if (!files || !files.length) return;
-  const allowed = MAX_IMAGES - tasks.length;
-  if (allowed <= 0) { showToast('最多支持 20 张图片'); return; }
-  let added = 0;
-  const fileArr = Array.from(files).slice(0, allowed);
-
-  fileArr.forEach(file => {
+  if(!files||!files.length) return;
+  const allowed = 20 - tasks.length;
+  if(allowed<=0){showToast('最多支持20张');return;}
+  let added=0;
+  Array.from(files).slice(0,allowed).forEach(f=>{
     const reader = new FileReader();
-    reader.onload = (e) => {
-      const task = {
-        id: Date.now() + '_' + Math.random(),
-        name: file.name,
-        dataUrl: e.target.result,
-        status: 'waiting',
-        data: null
-      };
+    reader.onload = e => {
+      const task = {id:`${Date.now()}_${Math.random()}`, name:f.name, dataUrl:e.target.result, status:'waiting', data:null};
       tasks.push(task);
       addTaskRow(task);
       added++;
       updateCount();
-      if (added === fileArr.length) showToast(`✓ 已添加 ${added} 张图片`);
+      if(added===Math.min(files.length,allowed)) showToast(`✓ 已添加${added}张图片`);
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(f);
   });
 }
 
 // =============================================
-// UI 渲染：主页任务列表
+// HOME UI
 // =============================================
 function updateCount() {
   document.getElementById('count-badge').textContent = `${tasks.length}/20`;
   const empty = document.getElementById('empty-state');
   const list = document.getElementById('task-list');
-  if (tasks.length === 0) { empty.style.display = 'flex'; list.style.display = 'none'; }
-  else { empty.style.display = 'none'; list.style.display = 'flex'; }
+  if(tasks.length===0){empty.style.display='flex';list.style.display='none';}
+  else{empty.style.display='none';list.style.display='flex';}
 }
-
 function addTaskRow(task) {
   const list = document.getElementById('task-list');
   const row = document.createElement('div');
-  row.className = 'task-row';
-  row.id = 'row-' + task.id;
-  row.onclick = () => openDetail(task);
-  row.innerHTML = `
+  row.className='task-row'; row.id='row-'+task.id;
+  row.onclick=()=>openDetail(task);
+  row.innerHTML=`
     <img class="task-thumb" src="${task.dataUrl}" alt="">
     <div class="task-info">
       <div class="task-name">${escHtml(task.name)}</div>
       <div class="task-status" id="status-${task.id}">⏳ 等待中</div>
     </div>
     <span class="task-dot" id="dot-${task.id}">⏳</span>
-    <span class="task-arrow">›</span>
-  `;
+    <span class="task-arrow">›</span>`;
   list.appendChild(row);
 }
-
-function updateTaskStatus(taskId, status, detail) {
-  const el = document.getElementById('status-' + taskId);
-  const dot = document.getElementById('dot-' + taskId);
-  if (!el) return;
-  const map = {
-    waiting:   ['⏳', '#9CA3AF', '等待中'],
-    analyzing: ['🔄', '#1A56DB', detail || '分析中'],
-    done:      ['✅', '#057A55', detail || '完成'],
-    error:     ['❌', '#E02424', detail || '失败']
-  };
-  const [icon, color, text] = map[status] || map.waiting;
-  if (dot) dot.textContent = icon;
-  el.textContent = text;
-  el.style.color = color;
+function updateTaskStatus(id, status, detail) {
+  const el=document.getElementById('status-'+id), dot=document.getElementById('dot-'+id);
+  if(!el) return;
+  const map={waiting:['⏳','#9CA3AF','等待中'],analyzing:['🔄','#1A56DB',detail||'分析中'],done:['✅','#057A55',detail||'完成'],error:['❌','#E02424',detail||'失败']};
+  const [icon,color,text]=map[status]||map.waiting;
+  if(dot) dot.textContent=icon;
+  el.textContent=text; el.style.color=color;
 }
 
 // =============================================
-// AI 分析核心逻辑（完整保留）
+// AI 分析
 // =============================================
 async function startAnalysis() {
-  if (!config.api_key) {
-    showToast('⚠️ 请先在设置中配置 API Key');
-    setTimeout(() => openSettings(), 500);
-    return;
-  }
-  const waiting = tasks.filter(t => t.status === 'waiting' || t.status === 'error');
-  if (!waiting.length) { showToast('没有待分析的图片'); return; }
-
-  totalAnalyzing = waiting.length;
-  doneAnalyzing = 0;
-  setProgress(0, true);
-  setStatus(`正在分析 ${waiting.length} 张...`);
-
-  waiting.forEach(task => {
-    task.status = 'analyzing';
-    updateTaskStatus(task.id, 'analyzing');
-    analyzeTask(task);
-  });
+  if(!config.api_key){showToast('⚠️ 请先在设置中配置 API Key');setTimeout(()=>switchTab(3),600);return;}
+  const waiting = tasks.filter(t=>t.status==='waiting'||t.status==='error');
+  if(!waiting.length){showToast('没有待分析的图片');return;}
+  totalAnalyzing=waiting.length; doneAnalyzing=0;
+  setProgress(0, true); setStatus(`正在分析${waiting.length}张...`);
+  const promptMode = document.getElementById('prompt-select').value;
+  waiting.forEach(task=>{task.status='analyzing';updateTaskStatus(task.id,'analyzing');analyzeTask(task,promptMode);});
 }
 
-async function analyzeTask(task) {
+async function analyzeTask(task, promptMode) {
   try {
-    const preset = PROVIDER_PRESETS[config.provider];
+    const preset = PROVIDERS[config.provider];
     const b64 = task.dataUrl.split(',')[1];
+    task.progress_msg='🔍 智能分诊中...';
+    updateTaskStatus(task.id,'analyzing','🔍 智能分诊中...');
+    if(currentDetailTask?.id===task.id) renderDetailContent(task);
 
-    // 第一步：路由分诊
-    updateTaskStatus(task.id, 'analyzing', '🔍 智能分诊中...');
-    if (currentDetailTask?.id === task.id) renderDetailContent(task);
-
-    const routerResp = await callAI(preset, ROUTER_PROMPT,
-      '请分析施工内容并选派专家', b64);
-
+    // Step1: 路由
+    const routerResp = await callAI(preset, ROUTER_PROMPT, '请分析施工内容并选派专家', b64, 0.1, 512);
     let roles = parseRoles(routerResp);
-    if (!roles.length) roles = ['安全'];
-    if (!roles.includes('安全')) roles.push('安全');
+    if(!roles.length) roles=['安全'];
+    if(!roles.includes('安全')) roles.push('安全');
 
-    // 第二步：各专家分析
-    const allIssues = [];
-    for (let i = 0; i < roles.length; i++) {
-      const role = roles[i];
-      task.progress_msg = `🔬 ${role}专家分析 (${i+1}/${roles.length})`;
-      updateTaskStatus(task.id, 'analyzing', task.progress_msg);
-      if (currentDetailTask?.id === task.id) renderDetailContent(task);
-
-      const kb = REGULATION_DB[role] || REGULATION_DB['安全'];
-      const resp = await callAI(preset, buildAIPrompt(role, kb),
-        '请分析图片，找出所有问题。输出JSON数组。', b64);
-      const issues = parseIssues(resp, role);
-      allIssues.push(...issues);
+    // Step2: 各专家分析
+    const allIssues=[];
+    for(let i=0;i<roles.length;i++){
+      const role=roles[i];
+      task.progress_msg=`🔬 ${role}专家分析 (${i+1}/${roles.length})`;
+      updateTaskStatus(task.id,'analyzing',task.progress_msg);
+      if(currentDetailTask?.id===task.id) renderDetailContent(task);
+      const kb=REGULATION_DB[role]||REGULATION_DB['安全'];
+      const resp=await callAI(preset, buildExpertPrompt(role,kb,promptMode), '请分析图片，找出所有问题。输出JSON数组。', b64, 0.3, 4096);
+      allIssues.push(...parseIssues(resp,role));
     }
-
-    task.status = 'done';
-    task.data = allIssues;
-    const cnt = allIssues.length;
-    updateTaskStatus(task.id, 'done', cnt ? `发现 ${cnt} 个问题` : '未发现问题');
-
-  } catch (err) {
-    task.status = 'error';
-    task.error = err.message || '网络错误';
-    updateTaskStatus(task.id, 'error', task.error.slice(0, 30));
+    task.status='done'; task.data=allIssues;
+    const cnt=allIssues.length;
+    updateTaskStatus(task.id,'done',cnt?`发现${cnt}个问题`:'未发现问题');
+  } catch(err) {
+    task.status='error'; task.error=err.message||'网络错误';
+    updateTaskStatus(task.id,'error',task.error.slice(0,30));
   }
-
-  if (currentDetailTask?.id === task.id) renderDetailContent(task);
-
+  if(currentDetailTask?.id===task.id) renderDetailContent(task);
   doneAnalyzing++;
-  setProgress(Math.round(doneAnalyzing / totalAnalyzing * 100), true);
-
-  if (doneAnalyzing >= totalAnalyzing) {
+  setProgress(Math.round(doneAnalyzing/totalAnalyzing*100), true);
+  if(doneAnalyzing>=totalAnalyzing){
     setProgress(100, false);
-    const total = tasks.reduce((s, t) => s + (t.data?.length || 0), 0);
-    setStatus(`分析完成，共 ${total} 个问题`);
-    showToast(`✅ 分析完成！发现 ${total} 个问题`);
+    const total=tasks.reduce((s,t)=>s+(t.data?.length||0),0);
+    setStatus(`分析完成，共${total}个问题`);
+    showToast(`✅ 分析完成！发现${total}个问题`);
   }
 }
 
-async function callAI(preset, systemPrompt, userText, b64) {
-  const resp = await fetch(`${preset.base_url}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${config.api_key}`
-    },
-    body: JSON.stringify({
-      model: preset.model,
-      temperature: 0.3,
-      max_tokens: 4096,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: [
-          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${b64}` } },
-          { type: 'text', text: userText }
+async function callAI(preset, system, user, b64, temp=0.3, maxTokens=4096) {
+  const resp = await fetch(`${preset.url}/chat/completions`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.api_key}`},
+    body:JSON.stringify({
+      model:preset.model, temperature:temp, max_tokens:maxTokens,
+      messages:[
+        {role:'system',content:system},
+        {role:'user',content:[
+          {type:'image_url',image_url:{url:`data:image/jpeg;base64,${b64}`}},
+          {type:'text',text:user}
         ]}
       ]
     })
   });
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err.error?.message || `HTTP ${resp.status}`);
-  }
-  const data = await resp.json();
-  return data.choices?.[0]?.message?.content || '';
+  if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${resp.status}`);}
+  const data=await resp.json();
+  return data.choices?.[0]?.message?.content||'';
 }
-
-function parseRoles(text) {
-  try {
-    const m = text.match(/\[.*?\]/s);
-    if (m) return JSON.parse(m[0]);
-  } catch(e) {}
-  return [];
-}
-
-function parseIssues(text, role) {
-  try {
-    const clean = text.replace(/```json|```/g, '').trim();
-    const s = clean.indexOf('['), e = clean.lastIndexOf(']') + 1;
-    if (s !== -1 && e > 0) {
-      const arr = JSON.parse(clean.slice(s, e));
-      return arr.filter(x => typeof x === 'object').map(x => ({ ...x, category: role }));
+function parseRoles(text){try{const m=text.match(/\[.*?\]/s);if(m)return JSON.parse(m[0]);}catch(e){}return[];}
+function parseIssues(text,role){
+  try{
+    const clean=text.replace(/```json|```/g,'').trim();
+    const s=clean.indexOf('['),e=clean.lastIndexOf(']')+1;
+    if(s!==-1&&e>0){
+      const arr=JSON.parse(clean.slice(s,e));
+      return arr.filter(x=>typeof x==='object').map(x=>({...x,category:role}));
     }
-  } catch(e) {}
-  return [];
+  }catch(e){}
+  return[];
 }
 
 // =============================================
-// 渲染详情页
+// 图片缩放（详情页）
 // =============================================
-function renderDetailContent(task) {
-  const el = document.getElementById('detail-content');
-  if (!el) return;
-  el.innerHTML = '';
+let zoomLevel=1, zoomPanX=0, zoomPanY=0;
+let isPanning=false, panStartX=0, panStartY=0, panStartPX=0, panStartPY=0;
+// 双指缩放
+let pinchDist=0;
 
-  if (task.status === 'waiting') {
-    el.innerHTML = stateCard('⏳', '等待分析', '点击主页「▶ 开始分析」', '#9CA3AF');
-  } else if (task.status === 'analyzing') {
-    el.innerHTML = stateCard('🔄', '正在分析...', task.progress_msg || '', '#1A56DB');
-  } else if (task.status === 'error') {
-    el.innerHTML = stateCard('❌', '分析失败', task.error || '', '#E02424');
-  } else if (task.status === 'done') {
-    const data = task.data || [];
-    if (!data.length) {
-      el.innerHTML = stateCard('✅', '未发现问题', '该图片未检测到明显安全质量隐患', '#057A55');
-    } else {
-      const sorted = [...data].sort((a, b) =>
-        (RISK_STYLE[a.risk_level]?.priority ?? 9) - (RISK_STYLE[b.risk_level]?.priority ?? 9));
+function initZoom(){
+  zoomLevel=1; zoomPanX=0; zoomPanY=0;
+  applyZoom();
+}
+function applyZoom(){
+  const img=document.getElementById('detail-img');
+  if(!img) return;
+  img.style.transform=`translate(${zoomPanX}px,${zoomPanY}px) scale(${zoomLevel})`;
+  document.getElementById('zoom-label').textContent=Math.round(zoomLevel*100)+'%';
+}
+function zoomIn(){zoomLevel=Math.min(zoomLevel+0.25,4);zoomPanX=0;zoomPanY=0;applyZoom();}
+function zoomOut(){zoomLevel=Math.max(zoomLevel-0.25,0.5);if(zoomLevel<=1){zoomPanX=0;zoomPanY=0;}applyZoom();}
 
-      // 统计卡
-      const counts = {};
-      data.forEach(x => counts[x.risk_level] = (counts[x.risk_level] || 0) + 1);
-      const badgeHTML = Object.entries(counts).map(([lvl, cnt]) => {
-        const st = RISK_STYLE[lvl] || RISK_STYLE['一般质量缺陷'];
+function setupDetailZoom(){
+  const wrap=document.getElementById('detail-img-inner');
+  if(!wrap) return;
+  // 双指缩放
+  wrap.addEventListener('touchstart',e=>{
+    if(e.touches.length===2){
+      pinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    } else if(e.touches.length===1&&zoomLevel>1){
+      isPanning=true;
+      panStartX=e.touches[0].clientX; panStartY=e.touches[0].clientY;
+      panStartPX=zoomPanX; panStartPY=zoomPanY;
+    }
+  },{passive:true});
+  wrap.addEventListener('touchmove',e=>{
+    if(e.touches.length===2){
+      e.preventDefault();
+      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      const ratio=d/pinchDist;
+      zoomLevel=Math.min(Math.max(zoomLevel*ratio,0.5),4);
+      pinchDist=d; applyZoom();
+    } else if(e.touches.length===1&&isPanning){
+      zoomPanX=panStartPX+(e.touches[0].clientX-panStartX);
+      zoomPanY=panStartPY+(e.touches[0].clientY-panStartY);
+      applyZoom();
+    }
+  },{passive:false});
+  wrap.addEventListener('touchend',()=>{isPanning=false;});
+  // 双击放大
+  let lastTap=0;
+  wrap.addEventListener('touchend',e=>{
+    const now=Date.now();
+    if(now-lastTap<300){zoomLevel===1?zoomIn():initZoom();}
+    lastTap=now;
+  });
+}
+
+// =============================================
+// 全屏查看器
+// =============================================
+let fsZoomLevel=1, fsPanX=0, fsPanY=0;
+let fsPinchDist=0, fsIsPanning=false;
+let fsPanStartX=0,fsPanStartY=0,fsPanStartPX=0,fsPanStartPY=0;
+
+function openFullscreen(){
+  const src=document.getElementById('detail-img').src;
+  if(!src||src==='') return;
+  const fsImg=document.getElementById('fs-img');
+  fsImg.src=src; fsZoomLevel=1; fsPanX=0; fsPanY=0; applyFsZoom();
+  document.getElementById('fullscreen-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  setupFsZoom();
+}
+function closeFullscreen(){
+  document.getElementById('fullscreen-overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+function applyFsZoom(){
+  const img=document.getElementById('fs-img');
+  if(!img) return;
+  img.style.transform=`translate(${fsPanX}px,${fsPanY}px) scale(${fsZoomLevel})`;
+  document.getElementById('fs-zoom-label').textContent=Math.round(fsZoomLevel*100)+'%';
+}
+function fsZoom(delta){fsZoomLevel=Math.min(Math.max(fsZoomLevel+delta,0.5),8);if(fsZoomLevel<=1){fsPanX=0;fsPanY=0;}applyFsZoom();}
+function fsReset(){fsZoomLevel=1;fsPanX=0;fsPanY=0;applyFsZoom();}
+
+function setupFsZoom(){
+  const wrap=document.getElementById('fs-img-wrap');
+  wrap.removeEventListener('touchstart',fsTouchStart);
+  wrap.removeEventListener('touchmove',fsTouchMove);
+  wrap.removeEventListener('touchend',fsTouchEnd);
+  wrap.addEventListener('touchstart',fsTouchStart,{passive:true});
+  wrap.addEventListener('touchmove',fsTouchMove,{passive:false});
+  wrap.addEventListener('touchend',fsTouchEnd);
+}
+function fsTouchStart(e){
+  if(e.touches.length===2){fsPinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}
+  else if(e.touches.length===1){fsIsPanning=true;fsPanStartX=e.touches[0].clientX;fsPanStartY=e.touches[0].clientY;fsPanStartPX=fsPanX;fsPanStartPY=fsPanY;}
+}
+function fsTouchMove(e){
+  if(e.touches.length===2){
+    e.preventDefault();
+    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    fsZoomLevel=Math.min(Math.max(fsZoomLevel*(d/fsPinchDist),0.5),8);
+    fsPinchDist=d; applyFsZoom();
+  } else if(e.touches.length===1&&fsIsPanning){
+    fsPanX=fsPanStartPX+(e.touches[0].clientX-fsPanStartX);
+    fsPanY=fsPanStartPY+(e.touches[0].clientY-fsPanStartY);
+    applyFsZoom();
+  }
+}
+function fsTouchEnd(){fsIsPanning=false;}
+
+// =============================================
+// 详情页
+// =============================================
+function openDetail(task) {
+  currentDetailTask=task;
+  document.getElementById('detail-title').textContent='  '+task.name;
+  document.getElementById('detail-img').src=task.dataUrl||'';
+  initZoom();
+  ['view-home','view-summary','view-settings'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  document.getElementById('view-detail').classList.add('active');
+  renderDetailContent(task);
+  setTimeout(setupDetailZoom, 100);
+}
+function closeDetail(){
+  document.getElementById('view-detail').classList.remove('active');
+  currentDetailTask=null;
+  if(currentTab===0) document.getElementById('view-home').classList.add('active');
+  else if(currentTab===1){document.getElementById('view-summary').classList.add('active');renderSummary();}
+  else if(currentTab===3) document.getElementById('view-settings').classList.add('active');
+}
+
+function renderDetailContent(task){
+  const el=document.getElementById('detail-content');
+  if(!el) return;
+  el.innerHTML='';
+  if(task.status==='waiting') el.innerHTML=stateCard('⏳','等待分析','点击主页「▶ 开始分析」','#9CA3AF');
+  else if(task.status==='analyzing') el.innerHTML=stateCard('🔄','正在分析...',task.progress_msg||'','#1A56DB');
+  else if(task.status==='error') el.innerHTML=stateCard('❌','分析失败',task.error||'','#E02424');
+  else if(task.status==='done'){
+    const data=task.data||[];
+    if(!data.length){el.innerHTML=stateCard('✅','未发现问题','该图片未检测到明显安全质量隐患','#057A55');}
+    else{
+      const counts={};
+      data.forEach(x=>counts[x.risk_level]=(counts[x.risk_level]||0)+1);
+      const badgeHTML=Object.entries(counts).map(([lvl,cnt])=>{
+        const st=RISK_STYLE[lvl]||RISK_STYLE['一般质量缺陷'];
         return `<span class="stat-badge" style="background:${st.bg};color:${st.border};border-color:${st.border}">${st.icon} ${lvl.slice(0,4)} ${cnt}个</span>`;
       }).join('');
-
-      const statsDiv = document.createElement('div');
-      statsDiv.className = 'stats-card';
-      statsDiv.innerHTML = `<div class="stats-title">共 ${data.length} 个问题</div><div class="stats-badges">${badgeHTML}</div>`;
-      el.appendChild(statsDiv);
-
-      sorted.forEach((item, i) => {
-        el.appendChild(buildRiskCard(item, i + 1, task.id));
-      });
+      const stats=document.createElement('div');
+      stats.className='stats-card';
+      stats.innerHTML=`<div class="stats-title">共${data.length}个问题</div><div class="stats-badges">${badgeHTML}</div>`;
+      el.appendChild(stats);
+      [...data].sort((a,b)=>(RISK_STYLE[a.risk_level]?.priority??9)-(RISK_STYLE[b.risk_level]?.priority??9))
+        .forEach((item,i)=>el.appendChild(buildRiskCard(item,i+1,task.id)));
     }
   }
 }
 
 // =============================================
-// 渲染汇总页
+// 汇总页
 // =============================================
-function renderSummary() {
-  const el = document.getElementById('summary-content');
-  const allIssues = [];
-  tasks.forEach(t => {
-    if (t.status === 'done' && t.data) {
-      t.data.forEach(iss => allIssues.push({ ...iss, _src: t.name, _taskId: t.id }));
-    }
-  });
-
-  if (!allIssues.length) {
-    el.innerHTML = `<div class="state-card" style="margin-top:20px">
-      <div class="state-icon">📊</div>
-      <div class="state-title">暂无分析结果</div>
-      <div class="state-sub">请先在主页添加并分析图片</div>
-    </div>`;
+function renderSummary(){
+  const el=document.getElementById('summary-content');
+  const allIssues=[];
+  tasks.forEach(t=>{if(t.status==='done'&&t.data) t.data.forEach(iss=>allIssues.push({...iss,_src:t.name,_tid:t.id}));});
+  if(!allIssues.length){
+    el.innerHTML=`<div class="state-card"><div class="state-icon">📊</div><div class="state-title">暂无分析结果</div><div class="state-sub">请先在主页添加并分析图片</div></div>`;
     return;
   }
-
-  el.innerHTML = '';
-  const sorted = [...allIssues].sort((a, b) =>
-    (RISK_STYLE[a.risk_level]?.priority ?? 9) - (RISK_STYLE[b.risk_level]?.priority ?? 9));
-
-  const counts = {};
-  allIssues.forEach(x => counts[x.risk_level] = (counts[x.risk_level] || 0) + 1);
-  const badgeHTML = ['严重安全隐患','一般安全隐患','严重质量缺陷','一般质量缺陷']
-    .filter(lvl => counts[lvl])
-    .map(lvl => {
-      const st = RISK_STYLE[lvl];
-      return `<span class="stat-badge" style="background:${st.bg};color:${st.border};border-color:${st.border}">${st.icon} ${lvl.slice(0,4)} ${counts[lvl]}个</span>`;
-    }).join('');
-
-  const stats = document.createElement('div');
-  stats.className = 'stats-card';
-  stats.innerHTML = `<div class="stats-title">共发现 ${allIssues.length} 个问题</div><div class="stats-badges">${badgeHTML}</div>`;
+  el.innerHTML='';
+  const sorted=[...allIssues].sort((a,b)=>(RISK_STYLE[a.risk_level]?.priority??9)-(RISK_STYLE[b.risk_level]?.priority??9));
+  const counts={};
+  allIssues.forEach(x=>counts[x.risk_level]=(counts[x.risk_level]||0)+1);
+  const badgeHTML=['严重安全隐患','一般安全隐患','严重质量缺陷','一般质量缺陷'].filter(l=>counts[l]).map(l=>{
+    const st=RISK_STYLE[l];
+    return `<span class="stat-badge" style="background:${st.bg};color:${st.border};border-color:${st.border}">${st.icon} ${l.slice(0,4)} ${counts[l]}个</span>`;
+  }).join('');
+  const stats=document.createElement('div');
+  stats.className='stats-card';
+  stats.innerHTML=`<div class="stats-title">共发现${allIssues.length}个问题</div><div class="stats-badges">${badgeHTML}</div>`;
   el.appendChild(stats);
-
-  sorted.forEach((item, i) => {
-    const src = document.createElement('div');
-    src.className = 'src-label';
-    src.textContent = `📷 ${item._src}`;
-    el.appendChild(src);
-    el.appendChild(buildRiskCard(item, i + 1, item._taskId));
+  sorted.forEach((item,i)=>{
+    const src=document.createElement('div');
+    src.className='src-label';src.textContent=`📷 ${item._src}`;el.appendChild(src);
+    el.appendChild(buildRiskCard(item,i+1,item._tid));
   });
 }
 
 // =============================================
-// 风险卡片构建
+// 风险卡片
 // =============================================
-function buildRiskCard(item, index, taskId) {
-  const st = RISK_STYLE[item.risk_level] || RISK_STYLE['一般质量缺陷'];
-  const issueShort = (item.issue || '').length > 80
-    ? (item.issue || '').slice(0, 80) + '...'
-    : (item.issue || '');
-
-  const card = document.createElement('div');
-  card.className = 'risk-card';
-  card.style.cssText = `background:${st.bg};border-color:${st.border};margin-bottom:10px`;
-
-  card.innerHTML = `
+function buildRiskCard(item, index, taskId){
+  const st=RISK_STYLE[item.risk_level]||RISK_STYLE['一般质量缺陷'];
+  const issueShort=(item.issue||'').length>80?(item.issue||'').slice(0,80)+'...':(item.issue||'');
+  const card=document.createElement('div');
+  card.className='risk-card';
+  card.style.cssText=`background:${st.bg};border-color:${st.border}`;
+  card.innerHTML=`
     <div class="card-header">
       <div class="card-num" style="background:${st.border}">${index}</div>
       <div class="card-badge" style="background:${st.border}">${st.icon} ${item.risk_level}</div>
-      ${item.category ? `<div class="card-cat">${escHtml(item.category)}</div>` : ''}
+      ${item.category?`<div class="card-cat">${escHtml(item.category)}</div>`:''}
       <div class="card-actions">
-        <button class="card-btn btn-edit" onclick="openEdit(event, '${escAttr(item.issue)}','${escAttr(taskId)}')">编辑</button>
-        <button class="card-btn btn-copy-card" onclick="copyIssue(event, this)">复制</button>
-        <button class="card-btn btn-delete" onclick="deleteIssue(event, '${escAttr(item.issue)}','${escAttr(taskId)}')">删除</button>
+        <button class="card-btn btn-edit">编辑</button>
+        <button class="card-btn btn-copy-card">复制</button>
+        <button class="card-btn btn-delete">删除</button>
       </div>
     </div>
     <div class="card-issue">${escHtml(issueShort)}</div>
     <div class="card-hint">💬 点击查看详情</div>
-    ${item.regulation || item.correction ? '<hr class="card-divider">' : ''}
+    ${item.regulation||item.correction?'<hr class="card-divider">':''}
     <div class="card-footer">
-      <div class="card-icons">
-        ${item.regulation ? '<span>📋</span>' : ''}
-        ${item.correction ? '<span>✅</span>' : ''}
-      </div>
-      ${item.confidence ? `<span class="card-conf">置信度 ${Math.round(item.confidence * 100)}%</span>` : ''}
-    </div>
-  `;
-
-  // 存储完整数据
-  card._item = item;
-  card._taskId = taskId;
-
-  card.addEventListener('click', (e) => {
-    if (e.target.closest('.card-btn')) return;
-    showIssueDetail(item);
-  });
-
+      <div style="display:flex;gap:8px">${item.regulation?'<span>📋</span>':''}${item.correction?'<span>✅</span>':''}</div>
+      ${item.confidence?`<span class="card-conf">置信度${Math.round(item.confidence*100)}%</span>`:''}
+    </div>`;
+  card._item=item; card._taskId=taskId;
+  card.querySelector('.btn-edit').onclick=e=>{e.stopPropagation();openEdit(item,taskId);};
+  card.querySelector('.btn-copy-card').onclick=e=>{e.stopPropagation();copyIssue(item);};
+  card.querySelector('.btn-delete').onclick=e=>{e.stopPropagation();deleteIssue(item,taskId);};
+  card.addEventListener('click',()=>showIssueDetail(item));
   return card;
 }
 
 // =============================================
 // 问题操作
 // =============================================
-function findItem(issue_text, taskId) {
-  const task = tasks.find(t => t.id === taskId);
-  if (!task?.data) return null;
-  return task.data.find(x => x.issue === issue_text);
-}
-
-function openEdit(e, issueText, taskId) {
-  e.stopPropagation();
-  const item = findItem(issueText, taskId);
-  if (!item) return;
-  editingItem = item;
-  editingTaskId = taskId;
-  document.getElementById('edit-level').value = item.risk_level || '一般质量缺陷';
-  document.getElementById('edit-issue').value = item.issue || '';
-  document.getElementById('edit-regulation').value = item.regulation || '';
-  document.getElementById('edit-correction').value = item.correction || '';
+function openEdit(item, taskId){
+  editingItem=item; editingTaskId=taskId;
+  document.getElementById('edit-level').value=item.risk_level||'一般质量缺陷';
+  document.getElementById('edit-issue').value=item.issue||'';
+  document.getElementById('edit-regulation').value=item.regulation||'';
+  document.getElementById('edit-correction').value=item.correction||'';
   openModal('modal-edit');
 }
-
-function saveEdit() {
-  if (!editingItem) return;
-  editingItem.risk_level = document.getElementById('edit-level').value;
-  editingItem.issue = document.getElementById('edit-issue').value.trim();
-  editingItem.regulation = document.getElementById('edit-regulation').value.trim();
-  editingItem.correction = document.getElementById('edit-correction').value.trim();
+function saveEdit(){
+  if(!editingItem) return;
+  editingItem.risk_level=document.getElementById('edit-level').value;
+  editingItem.issue=document.getElementById('edit-issue').value.trim();
+  editingItem.regulation=document.getElementById('edit-regulation').value.trim();
+  editingItem.correction=document.getElementById('edit-correction').value.trim();
   closeModal('modal-edit');
-  showToast('✓ 已保存修改');
-  if (currentDetailTask) renderDetailContent(currentDetailTask);
-  if (currentTab === 1) renderSummary();
+  showToast('✓ 已保存');
+  if(currentDetailTask) renderDetailContent(currentDetailTask);
+  if(currentTab===1) renderSummary();
 }
-
-function deleteIssue(e, issueText, taskId) {
-  e.stopPropagation();
-  if (!confirm(`确定删除此问题？\n\n${issueText.slice(0, 50)}...`)) return;
-  const task = tasks.find(t => t.id === taskId);
-  if (task?.data) task.data = task.data.filter(x => x.issue !== issueText);
+function deleteIssue(item, taskId){
+  if(!confirm(`确定删除？\n${(item.issue||'').slice(0,50)}`)) return;
+  const task=tasks.find(t=>t.id===taskId);
+  if(task?.data) task.data=task.data.filter(x=>x!==item);
   showToast('✓ 已删除');
-  if (currentDetailTask?.id === taskId) renderDetailContent(currentDetailTask);
-  if (currentTab === 1) renderSummary();
+  if(currentDetailTask?.id===taskId) renderDetailContent(currentDetailTask);
+  if(currentTab===1) renderSummary();
 }
-
-function copyIssue(e, btn) {
-  e.stopPropagation();
-  const card = btn.closest('.risk-card');
-  const item = card._item;
-  if (!item) return;
-  const text = `【${item.risk_level}】\n${item.issue}\n\n📋 规范依据：${item.regulation || '—'}\n✅ 整改措施：${item.correction || '—'}`;
-  copyText(text);
-  showToast('✓ 已复制');
+function copyIssue(item){
+  const text=`【${item.risk_level}】\n${item.issue}\n\n📋 规范依据：${item.regulation||'—'}\n✅ 整改措施：${item.correction||'—'}`;
+  copyText(text); showToast('✓ 已复制');
 }
-
-function showIssueDetail(item) {
-  const st = RISK_STYLE[item.risk_level] || RISK_STYLE['一般质量缺陷'];
-  document.getElementById('modal-detail-content').innerHTML = `
-    <div style="background:${st.border};color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:700;margin-bottom:14px">
-      ${st.icon} ${item.risk_level}
-    </div>
-    <div class="detail-section">
-      <div class="detail-section-title">📝 问题描述</div>
-      <div class="detail-section-body">${escHtml(item.issue || '')}</div>
-    </div>
-    ${item.regulation ? `<div class="detail-section">
-      <div class="detail-section-title">📋 规范依据</div>
-      <div class="detail-section-body" style="color:var(--text-secondary)">${escHtml(item.regulation)}</div>
-    </div>` : ''}
-    ${item.correction ? `<div class="detail-section">
-      <div class="detail-section-title">✅ 整改措施</div>
-      <div class="detail-section-body" style="color:var(--success)">${escHtml(item.correction)}</div>
-    </div>` : ''}
-  `;
+function showIssueDetail(item){
+  const st=RISK_STYLE[item.risk_level]||RISK_STYLE['一般质量缺陷'];
+  document.getElementById('modal-detail-content').innerHTML=`
+    <div style="background:${st.border};color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:700;margin-bottom:14px">${st.icon} ${item.risk_level}</div>
+    <div class="detail-section"><div class="detail-section-title">📝 问题描述</div><div class="detail-section-body">${escHtml(item.issue||'')}</div></div>
+    ${item.regulation?`<div class="detail-section"><div class="detail-section-title">📋 规范依据</div><div class="detail-section-body" style="color:var(--text-secondary)">${escHtml(item.regulation)}</div></div>`:''}
+    ${item.correction?`<div class="detail-section"><div class="detail-section-title">✅ 整改措施</div><div class="detail-section-body" style="color:var(--success)">${escHtml(item.correction)}</div></div>`:''}`;
   openModal('modal-detail');
 }
 
 // =============================================
 // 复制全部
 // =============================================
-function copyAll() {
-  const allIssues = [];
-  tasks.forEach(t => {
-    if (t.status === 'done' && t.data) {
-      t.data.forEach(iss => allIssues.push({ ...iss, _src: t.name }));
-    }
-  });
-  if (!allIssues.length) { showToast('暂无可复制的问题'); return; }
-
-  const sorted = [...allIssues].sort((a, b) =>
-    (RISK_STYLE[a.risk_level]?.priority ?? 9) - (RISK_STYLE[b.risk_level]?.priority ?? 9));
-
-  const now = new Date().toLocaleString('zh-CN');
-  const lines = [
-    '🏗️ 质量安全检查问题清单',
-    `检查时间：${now}`,
-    `分析图片：${tasks.filter(t => t.status === 'done').length} 张`,
-    `发现问题：${allIssues.length} 个`,
-    '='.repeat(40), ''
-  ];
-  sorted.forEach((iss, i) => {
-    lines.push(
-      `${i+1}. 【${iss.risk_level}】`,
-      `   来源：${iss._src}`,
-      `   ${iss.issue}`,
-      `   📋 依据：${iss.regulation || '—'}`,
-      `   ✅ 整改：${iss.correction || '—'}`,
-      ''
-    );
-  });
+function copyAll(){
+  const allIssues=[];
+  tasks.forEach(t=>{if(t.status==='done'&&t.data) t.data.forEach(iss=>allIssues.push({...iss,_src:t.name}));});
+  if(!allIssues.length){showToast('暂无可复制的问题');return;}
+  const sorted=[...allIssues].sort((a,b)=>(RISK_STYLE[a.risk_level]?.priority??9)-(RISK_STYLE[b.risk_level]?.priority??9));
+  const now=new Date().toLocaleString('zh-CN');
+  const lines=['🏗️ 质量安全检查问题清单',`检查时间：${now}`,`分析图片：${tasks.filter(t=>t.status==='done').length}张`,`发现问题：${allIssues.length}个`,'='.repeat(40),''];
+  sorted.forEach((iss,i)=>{lines.push(`${i+1}. 【${iss.risk_level}】`,`   来源：${iss._src}`,`   ${iss.issue}`,`   📋 依据：${iss.regulation||'—'}`,`   ✅ 整改：${iss.correction||'—'}`,``);});
   copyText(lines.join('\n'));
-  showToast(`✅ 已复制 ${allIssues.length} 个问题`);
+  showToast(`✅ 已复制${allIssues.length}个问题`);
 }
 
 // =============================================
 // 清空
 // =============================================
-function clearAll() {
-  if (!tasks.length) return;
-  if (!confirm('确定要清空所有图片吗？')) return;
-  tasks = [];
-  document.getElementById('task-list').innerHTML = '';
-  updateCount();
-  setStatus('就绪');
-  showToast('✓ 队列已清空');
+function clearAll(){
+  if(!tasks.length) return;
+  if(!confirm('确定要清空所有图片吗？')) return;
+  tasks=[];
+  document.getElementById('task-list').innerHTML='';
+  updateCount(); setStatus('就绪'); showToast('✓ 队列已清空');
 }
 
 // =============================================
-// 工具函数
+// 工具
 // =============================================
-function stateCard(icon, title, sub, color) {
-  return `<div class="state-card">
-    <div class="state-icon">${icon}</div>
-    <div class="state-title" style="color:${color}">${escHtml(title)}</div>
-    <div class="state-sub">${escHtml(sub)}</div>
-  </div>`;
+function stateCard(icon,title,sub,color){
+  return `<div class="state-card"><div class="state-icon">${icon}</div><div class="state-title" style="color:${color}">${escHtml(title)}</div><div class="state-sub">${escHtml(sub)}</div></div>`;
 }
-
-function setStatus(text) {
-  document.getElementById('status-bar').textContent = text;
+function setStatus(text){document.getElementById('status-bar').textContent=text;}
+function setProgress(val,visible){
+  const bar=document.getElementById('progress-bar');
+  bar.style.display=visible?'block':'none';
+  document.getElementById('progress-fill').style.width=val+'%';
 }
-
-function setProgress(val, visible) {
-  const bar = document.getElementById('progress-bar');
-  bar.style.display = visible ? 'block' : 'none';
-  document.getElementById('progress-fill').style.width = val + '%';
+function showToast(msg,dur=2500){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
 }
-
-function showToast(msg, duration = 2500) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), duration);
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+async function copyText(text){
+  try{await navigator.clipboard.writeText(text);}
+  catch(e){const el=document.createElement('textarea');el.value=text;el.style.position='fixed';el.style.opacity='0';document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);}
 }
+function escHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-function openModal(id) {
-  document.getElementById(id).classList.add('open');
-}
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-}
-
-function openSettings() {
-  document.getElementById('input-apikey').value = config.api_key || '';
-  document.getElementById('input-provider').value = config.provider || 'qwen2.5-vl-72b';
-  openModal('modal-settings');
-}
-
-async function copyText(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch(e) {
-    const el = document.createElement('textarea');
-    el.value = text; el.style.position = 'fixed'; el.style.opacity = '0';
-    document.body.appendChild(el); el.select();
-    document.execCommand('copy'); document.body.removeChild(el);
-  }
-}
-
-function escHtml(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function escAttr(str) {
-  return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;').slice(0, 200);
-}
-
-// =============================================
-// Service Worker 注册
-// =============================================
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
-}
-
-// =============================================
-// 初始化
-// =============================================
 loadConfig();
 updateCount();
 </script>
