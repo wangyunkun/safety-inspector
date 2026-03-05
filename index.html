@@ -90,60 +90,44 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
 .empty-state h2{font-size:19px;font-weight:700}
 .empty-state p{font-size:14px;color:var(--text-secondary);text-align:center}
 
-/* TASK LIST - 优化排版 */
-.task-list{padding:12px;display:flex;flex-direction:column;gap:10px}
-.task-row{background:var(--surface);border-radius:14px;border:1px solid var(--border);
-  display:flex;align-items:center;gap:14px;padding:12px 16px 12px 12px;
-  cursor:pointer;transition:transform .12s,box-shadow .12s;
-  box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.task-row:active{transform:scale(.98);box-shadow:0 2px 6px rgba(0,0,0,.08)}
-.task-thumb{width:54px;height:54px;border-radius:10px;object-fit:cover;
+/* TASK LIST */
+.task-list{padding:12px;display:flex;flex-direction:column;gap:8px}
+.task-row{background:var(--surface);border-radius:12px;border:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;padding:10px 14px 10px 10px;
+  cursor:pointer;transition:transform .1s}
+.task-row:active{transform:scale(.98)}
+.task-thumb{width:50px;height:50px;border-radius:8px;object-fit:cover;
   border:1px solid var(--border);flex-shrink:0;background:var(--bg)}
 .task-info{flex:1;min-width:0}
-.task-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.task-status{font-size:12px;color:var(--text-secondary);margin-top:4px}
+.task-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.task-status{font-size:12px;color:var(--text-secondary);margin-top:3px}
 .task-dot{font-size:20px;flex-shrink:0}
 .task-arrow{font-size:20px;color:var(--text-hint);flex-shrink:0}
 
-/* RISK CARD - 优化排版 */
-.risk-card{border-radius:16px;border:1.5px solid;padding:14px 16px;
-  cursor:pointer;transition:transform .12s,box-shadow .12s;margin-bottom:12px;
-  box-shadow:0 2px 4px rgba(0,0,0,.04)}
-.risk-card:active{transform:scale(.99)}
-.card-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-.card-num{width:26px;height:26px;border-radius:14px;display:flex;align-items:center;
-  justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
-.card-badge{padding:4px 10px;border-radius:8px;font-size:12px;font-weight:700;color:#fff}
-.card-cat{padding:4px 10px;border-radius:8px;font-size:11px;color:var(--text-secondary);
-  background:var(--surface);border:1px solid var(--border)}
-.card-actions{margin-left:auto;display:flex;gap:8px}
-.card-btn{padding:5px 12px;border-radius:7px;border:none;font-size:12px;font-weight:600;cursor:pointer}
+/* RISK CARD */
+.risk-card{
+  border-radius:14px;border:1.5px solid;padding:14px;
+  cursor:pointer;transition:transform .1s,box-shadow .2s;margin-bottom:12px;
+  background-image:linear-gradient(to bottom right,rgba(255,255,255,0.6),transparent);
+}
+.risk-card:active{transform:scale(.98)}
+.card-header{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.card-num{width:24px;height:24px;border-radius:12px;display:flex;align-items:center;
+  justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.card-badge{padding:3px 9px;border-radius:7px;font-size:12px;font-weight:700;color:#fff}
+.card-cat{padding:3px 9px;border-radius:7px;font-size:11px;color:var(--text-primary);
+  background:var(--surface);border:1px solid var(--border);font-weight:600}
+.card-actions{margin-left:auto;display:flex;gap:6px}
+.card-btn{padding:4px 10px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer}
 .card-btn:active{opacity:.7}
 .btn-edit{background:var(--info-light);color:var(--primary)}
 .btn-copy-card{background:var(--primary-light);color:var(--primary)}
 .btn-delete{background:var(--danger-light);color:var(--danger)}
-.card-issue{font-size:15px;font-weight:500;line-height:1.6;margin-bottom:8px;
-  color:var(--text-primary);letter-spacing:.2px}
+.card-issue{font-size:15px;font-weight:600;line-height:1.5;margin-bottom:8px;color:var(--text-primary)}
 .card-hint{font-size:11px;color:var(--text-hint);font-style:italic}
-.card-divider{border:none;border-top:1px solid var(--border);margin:10px 0}
+.card-divider{border:none;border-top:1px solid var(--border);margin:8px 0}
 .card-footer{display:flex;justify-content:space-between;align-items:center}
-.card-conf{font-size:11px;color:var(--text-hint);font-weight:500}
-
-/* 入场动画 - Fade-in-up */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.fade-in-up {
-  animation: fadeInUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-}
+.card-conf{font-size:11px;color:var(--text-hint)}
 
 /* IMAGE ZOOM VIEWER */
 .detail-image-wrap{background:#1F2937;flex-shrink:0;position:relative;overflow:hidden;
@@ -178,20 +162,20 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
 .fs-zoom-label{color:#fff;font-size:14px;min-width:50px;text-align:center}
 
 /* STATS CARD */
-.stats-card{background:var(--surface);border-radius:14px;border:1px solid var(--border);
-  padding:16px;margin-bottom:12px}
-.stats-title{font-size:16px;font-weight:700;margin-bottom:12px}
-.stats-badges{display:flex;flex-wrap:wrap;gap:10px}
-.stat-badge{padding:6px 12px;border-radius:9px;font-size:12px;font-weight:600;border:1px solid}
+.stats-card{background:var(--surface);border-radius:12px;border:1px solid var(--border);
+  padding:14px;margin-bottom:10px}
+.stats-title{font-size:16px;font-weight:700;margin-bottom:10px}
+.stats-badges{display:flex;flex-wrap:wrap;gap:8px}
+.stat-badge{padding:5px 10px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid}
 .src-label{font-size:11px;color:var(--text-hint);padding:2px 4px}
 
 /* STATE CARD */
-.state-card{background:var(--surface);border-radius:16px;border:1px solid var(--border);
-  padding:42px 22px;display:flex;flex-direction:column;align-items:center;
-  gap:12px;text-align:center;margin:14px}
-.state-icon{font-size:52px}
-.state-title{font-size:18px;font-weight:700}
-.state-sub{font-size:14px;color:var(--text-secondary)}
+.state-card{background:var(--surface);border-radius:14px;border:1px solid var(--border);
+  padding:40px 20px;display:flex;flex-direction:column;align-items:center;
+  gap:10px;text-align:center;margin:12px}
+.state-icon{font-size:48px}
+.state-title{font-size:17px;font-weight:700}
+.state-sub{font-size:13px;color:var(--text-secondary)}
 
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);
@@ -203,60 +187,62 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
   animation:slideUp .25s cubic-bezier(.25,.46,.45,.94)}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
-.modal-title{font-size:17px;font-weight:700;margin-bottom:18px}
-.form-group{margin-bottom:16px}
-.form-label{font-size:13px;font-weight:700;color:var(--text-hint);margin-bottom:8px;
+.modal-title{font-size:16px;font-weight:700;margin-bottom:16px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;font-weight:700;color:var(--text-hint);margin-bottom:6px;
   display:block;letter-spacing:.5px}
 .form-input,.form-select,.form-textarea{width:100%;border:1.5px solid var(--border);
-  border-radius:11px;padding:11px 13px;font-size:14px;background:var(--bg);
+  border-radius:10px;padding:10px 12px;font-size:14px;background:var(--bg);
   color:var(--text-primary);outline:none;font-family:inherit}
 .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--primary)}
-.form-textarea{resize:none;min-height:84px}
-.form-actions{display:flex;gap:12px;margin-top:18px}
-.form-actions button{flex:1;height:48px;border-radius:11px;border:none;
+.form-textarea{resize:none;min-height:80px}
+.form-actions{display:flex;gap:10px;margin-top:16px}
+.form-actions button{flex:1;height:46px;border-radius:10px;border:none;
   font-size:15px;font-weight:600;cursor:pointer}
 .btn-cancel{background:var(--surface2);color:var(--text-secondary);
   border:1.5px solid var(--border)!important}
 .btn-save{background:var(--primary);color:#fff}
-.btn-close-modal{background:var(--primary);color:#fff;width:100%;height:48px;
-  border-radius:11px;border:none;font-size:15px;font-weight:600;cursor:pointer;margin-top:18px}
-.detail-section{background:var(--surface);border-radius:14px;border:1px solid var(--border);
-  padding:16px;margin-bottom:12px}
-.detail-section-title{font-size:14px;font-weight:700;color:var(--text-secondary);margin-bottom:10px}
-.detail-section-body{font-size:14px;line-height:1.7}
+.btn-close-modal{background:var(--primary);color:#fff;width:100%;height:46px;
+  border-radius:10px;border:none;font-size:15px;font-weight:600;cursor:pointer;margin-top:16px}
+.detail-section{background:var(--surface);border-radius:12px;border:1px solid var(--border);
+  padding:14px;margin-bottom:10px}
+.detail-section-title{font-size:13px;font-weight:700;color:var(--text-secondary);margin-bottom:8px}
+.detail-section-body{font-size:14px;line-height:1.6}
 
 /* SETTINGS */
-.settings-section{background:var(--surface);border-radius:16px;overflow:hidden;margin-bottom:14px}
-.settings-item{padding:15px 17px;display:flex;align-items:center;gap:14px;
+.settings-section{background:var(--surface);border-radius:14px;overflow:hidden;margin-bottom:12px}
+.settings-item{padding:14px 16px;display:flex;align-items:center;gap:12px;
   border-bottom:1px solid var(--bg)}
 .settings-item:last-child{border-bottom:none}
-.settings-icon{font-size:21px;flex-shrink:0}
-.settings-label{font-size:15px;font-weight:600;color:var(--text-primary);flex:1}
-.settings-input{flex:1;border:1.5px solid var(--border);border-radius:11px;
-  padding:9px 13px;font-size:14px;background:var(--bg);outline:none;font-family:inherit}
+.settings-icon{font-size:20px;flex-shrink:0}
+.settings-label{font-size:14px;font-weight:600;color:var(--text-primary);flex:1}
+.settings-input{flex:1;border:1.5px solid var(--border);border-radius:10px;
+  padding:8px 12px;font-size:14px;background:var(--bg);outline:none;font-family:inherit}
 .settings-input:focus{border-color:var(--primary)}
-.settings-select{flex:1;border:1.5px solid var(--border);border-radius:11px;
-  padding:9px 13px;font-size:14px;background:var(--bg);outline:none}
-.settings-save{width:100%;height:50px;background:var(--primary);color:#fff;
-  border:none;border-radius:13px;font-size:15px;font-weight:700;cursor:pointer;
-  box-shadow:0 4px 15px rgba(26,86,219,.35)}
+.settings-select{flex:1;border:1.5px solid var(--border);border-radius:10px;
+  padding:8px 12px;font-size:14px;background:var(--bg);outline:none}
+.settings-save{width:100%;height:48px;background:var(--primary);color:#fff;
+  border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;
+  box-shadow:0 4px 14px rgba(26,86,219,.3)}
 
-/* TOAST - 队列化样式 */
-.toast-container{position:fixed;bottom:calc(var(--safe-bottom) + 90px);left:50%;
-  transform:translateX(-50%);display:flex;flex-direction:column;gap:10px;
-  pointer-events:none;z-index:9999;max-width:90vw}
-.toast{background:rgba(0,0,0,.85);color:#fff;padding:11px 22px;border-radius:26px;
-  font-size:14px;white-space:nowrap;opacity:0;transform:translateY(12px);
-  transition:all .3s cubic-bezier(.25,.46,.45,.94);pointer-events:none;
-  box-shadow:0 4px 16px rgba(0,0,0,.25);max-width:90vw}
-.toast.show{opacity:1;transform:translateY(0)}
-.toast.hiding{opacity:0;transform:translateY(-8px)}
+/* TOAST */
+.toast{
+  position:fixed;bottom:calc(var(--safe-bottom) + 80px);left:50%;
+  transform:translateX(-50%) translateY(20px) scale(0.9);
+  background:rgba(17,25,40,0.9);backdrop-filter:blur(8px);color:#fff;
+  padding:12px 24px;border-radius:30px;font-size:14px;font-weight:500;white-space:nowrap;
+  opacity:0;transition:all .3s cubic-bezier(0.175,0.885,0.32,1.275);
+  pointer-events:none;z-index:9999;max-width:90vw;
+  box-shadow:0 8px 24px rgba(0,0,0,0.15);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
 
-/* 多专家标签融合样式 */
-.multi-expert-tag{display:inline-flex;align-items:center;gap:4px;
-  background:linear-gradient(135deg, var(--primary-light), var(--success-light));
-  border:1px solid var(--primary);padding:3px 8px;border-radius:6px;
-  font-size:10px;color:var(--primary);font-weight:700}
+/* ANIMATIONS */
+@keyframes fadeInUp{
+  from{opacity:0;transform:translateY(12px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.fade-in{animation:fadeInUp .35s cubic-bezier(.25,.46,.45,.94) both}
 </style>
 </head>
 <body>
@@ -265,13 +251,13 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
   <!-- HOME VIEW -->
   <div class="view active" id="view-home">
     <div class="topbar">
-      <h1>🏗️ 安全质量助手 V3.0</h1>
+      <h1>🏗️ 安全质量助手V3.0</h1>
       <span class="count-badge" id="count-badge">0/20</span>
     </div>
     <div class="scene-bar">
       <label>检查场景</label>
       <select id="prompt-select">
-        <option value="dual">全项 安全 + 质量</option>
+        <option value="dual">全项 安全+质量</option>
         <option value="safety">安全隐患专项</option>
         <option value="quality">质量问题专项</option>
         <option value="critical">高危风险筛查</option>
@@ -448,8 +434,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
 <input type="file" id="file-camera" accept="image/*" capture="environment" multiple style="display:none" onchange="handleFiles(this.files)">
 <input type="file" id="file-gallery" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
 
-<!-- TOAST CONTAINER - 队列化 -->
-<div class="toast-container" id="toast-container"></div>
+<div class="toast" id="toast"></div>
 
 <script>
 // =============================================
@@ -469,667 +454,896 @@ const RISK_STYLE = {
 };
 
 // =============================================
-// V3.0 升级：N-Gram 相似度 + 置信度排序 + 信息融合
+// 完整且被强化的知识库（恢复多行结构，大模型更容易理解）
 // =============================================
-
-/**
- * 生成文本的 Bigram（双字分词）集合
- * 例如："安全生产" -> ["安全", "全生", "生产"]
- */
-function generateBigrams(text) {
-  const cleanText = text.replace(/\s+/g, '').trim();
-  if (cleanText.length < 2) return new Set([cleanText]);
-  const bigrams = new Set();
-  for (let i = 0; i < cleanText.length - 1; i++) {
-    bigrams.add(cleanText.substring(i, i + 2));
+const REGULATION_DB = {
+  '安全': {
+    role_desc: '注册安全工程师 | 30年施工现场安全管理经验',
+    scope: '通用安全防护、个人防护用品、临边洞口、脚手架、高处作业、人员违章行为、特种机械监护',
+    critical_hazards: [
+      '【致命】高处作业(2m以上)不系安全带或低挂高用',
+      '【致命】临边、洞口防护缺失或不牢固',
+      '【致命】起重机械、挖掘机等特种机械作业半径内，无专职指挥/监护人员（未见反光背心或红/白安全帽的监督者）',
+      '安全帽未系下颌带或佩戴裂缝帽',
+      '脚手架未满铺脚手板或存在探头板',
+      '安全网破损、老化、未张挂',
+      '交叉作业无隔离防护措施',
+      '特种作业区无警戒隔离'
+    ],
+    checklist: [
+      '【一眼识别】特种作业监护：画面中有挖掘机、吊车、泵车等机械动作，强制扫描周围5米内是否有专职指挥监护人员（穿反光背心等），如果没有立即按严重隐患报告',
+      '【一眼识别】安全帽：未戴安全帽、未系下颌带、帽壳裂纹立即报告',
+      '【一眼识别】安全带：2m以上无安全带或低挂高用立即报告',
+      '【一眼识别】临边防护：护栏不足1.2m立即报告',
+      '【一眼识别】洞口防护：无盖板或盖板不固定立即报告',
+      '【一眼识别】脚手板：未满铺、有探头板立即报告',
+      '【工艺检查】安全网：破损、老化、未系挂立即报告',
+      '【工艺检查】防护栏杆：上杆1.2m、中杆0.6m、挡脚板180mm',
+      '【工艺检查】电梯井防护：每层不大于10m设水平安全网'
+    ],
+    must_report_if: [
+      '发现挖掘机/起重机盲区内有工人作业',
+      '发现特种机械作业无专人指挥监督',
+      '发现安全带挂在不牢固构件上',
+      '发现安全防护设施被拆除或挪作他用',
+      '发现工人酒后上岗或疲劳作业',
+      '发现安全警示标志缺失'
+    ],
+    norms: `JGJ 59-2011《建筑施工安全检查标准》\n第3.2.5条 进入施工现场必须正确佩戴安全帽，系好下颌带。\n第5.1.1条 高处作业(≥2m)必须系安全带，高挂低用，挂点牢固。\n第3.13.3条 楼梯口、电梯井口、通道口、预留洞口必须设防护栏杆或盖板。\nJGJ 33-2012《建筑机械使用安全技术规程》\n特种机械作业必须设专人指挥和安全监护。`,
+    anti_hallucination: '管理人员在安全通道内检查可短时摘帽；地面平地作业不强制系安全带；休息区可不戴安全帽。'
+  },
+  '机械': {
+    role_desc: '起重机械专家 | 30年塔吊施工升降机安拆经验',
+    scope: '塔吊、施工升降机、吊篮、汽车吊、挖掘机、混凝土泵车等机械设备及作业环境',
+    critical_hazards: [
+      '【致命】使用挖掘机、装载机、推土机等非起重机械进行吊装作业',
+      '【致命】机械作业时无指挥人员或安全监护人员在场',
+      '【致命】塔吊力矩限制器、起重量限制器失效或被短接',
+      '【致命】施工升降机防坠安全器超期或失效',
+      '【致命】吊篮安全锁失效或配重不足',
+      '钢丝绳一个节距内断丝超过总丝数10%',
+      '起重机械未经检测验收或带病运转'
+    ],
+    checklist: [
+      '【一眼识别】无监护作业：发现挖掘机、吊车作业，但旁边无穿反光背心的指挥人员立即报告（致命隐患）',
+      '【一眼识别】非起重机械吊物：挖掘机、装载机吊物立即报告',
+      '【一眼识别】限位器：线头短接、拆除立即报告',
+      '【一眼识别】钢丝绳：断丝、断股、死弯、压扁、锈蚀立即报告',
+      '【一眼识别】吊钩：防脱钩装置缺失或损坏立即报告',
+      '【一眼识别】吊篮配重：配重块不足或固定失效立即报告',
+      '【工艺检查】标准节螺栓：松动立即报告',
+      '【工艺检查】附墙装置：间距符合说明书，不得焊接在脚手架上',
+      '【工艺检查】塔吊基础：积水立即报告'
+    ],
+    must_report_if: [
+      '发现机械作业区域无警戒线和专职监护人',
+      '发现起重机械超负荷使用',
+      '发现多塔作业无防碰撞措施',
+      '发现塔吊回转范围有高压线无防护',
+      '发现施工升降机门联锁失效'
+    ],
+    norms: `GB 5144-2006《塔式起重机安全规程》\n第6.1.1条 塔吊必须装设力矩限制器、起重量限制器、高度限位器、幅度限位器。\n第7.2.1条 钢丝绳报废：一个节距内断丝数超过总丝数10%，或有断股、死弯。\nJGJ 33-2012《建筑机械使用安全技术规程》\n第4.1.14条 严禁使用挖掘机、装载机、推土机等非起重机械进行吊装作业。\n第5.1.4条 机械作业区必须设置安全警戒，并派专人监护。`,
+    anti_hallucination: '停工状态吊钩无荷载正常；设备表面轻微锈迹不是缺陷；临时停放不是故障；挖掘机自身铲斗常规挖土作业不是违章。'
+  },
+  '消防': {
+    role_desc: '注册消防工程师 | 30年施工现场消防管理经验',
+    scope: '气瓶管理、动火作业、消防通道、灭火器、消防水源、易燃物存放',
+    critical_hazards: [
+      '氧气瓶与乙炔瓶混放或间距不足5m',
+      '气瓶距明火作业点不足10m',
+      '气瓶无防震圈、防倾倒措施或卧放使用',
+      '动火作业无监护人、无灭火器材',
+      '消防通道堵塞或消防水源不足',
+      '易燃材料堆放区无消防器材'
+    ],
+    checklist: [
+      '【一眼识别】气瓶间距：氧气乙炔瓶距离小于5m立即报告',
+      '【一眼识别】气瓶状态：横放（乙炔）、暴晒、无防震圈立即报告',
+      '【一眼识别】动火监护：无监护人、无灭火器立即报告',
+      '【一眼识别】消防通道：被材料、车辆堵塞立即报告',
+      '【工艺检查】灭火器配置：每50㎡不少于2具，压力指针在绿区',
+      '【工艺检查】临时消防水：压力是否足够，消防栓是否有水',
+      '【工艺检查】易燃物堆放：保温材料、油漆单独存放并标识'
+    ],
+    must_report_if: [
+      '发现乙炔瓶卧放使用',
+      '发现气瓶软管破损、接头漏气',
+      '发现灭火器过期或压力不足',
+      '发现电焊作业无接火盆、防火毯',
+      '发现消防栓无水或配件缺失'
+    ],
+    norms: `GB 50720-2011《建设工程施工现场消防安全技术规范》\n第5.3.7条 氧气瓶与乙炔瓶工作间距≥5m，与明火距离≥10m。\n第6.3.1条 动火作业必须办理动火许可证，设专人监护，配灭火器材。\n第4.2.1条 消防车道宽度不小于4m，不得占用消防车道堆放材料。`,
+    anti_hallucination: '空瓶待运可横放；少量油漆当天用完可暂存；食堂用火有专人管理不是违规。'
+  },
+  '土建': {
+    role_desc: '土建总工程师 | 30年房建与工业建筑施工经验',
+    scope: '砌体工程、抹灰、装饰、门窗、屋面瓦面、楼地面、填充墙等土建施工',
+    critical_hazards: [
+      '砌体墙体垂直度严重超差，影响结构安全',
+      '砌筑砂浆强度不足或和易性差（干砌）',
+      '填充墙与主体结构未设置拉结筋或拉结筋规格不足',
+      '脚手架与墙体连接不牢固，悬挑架超出安全范围',
+      '屋面防水层未按设计施工，施工后积水'
+    ],
+    checklist: [
+      '【一眼识别】砌体垂直度：用2m靠尺检查，偏差超8mm立即报告',
+      '【一眼识别】砂浆饱满度：水平灰缝饱满度不低于80%',
+      '【一眼识别】拉结筋：填充墙每500mm设一道2Φ6拉结筋',
+      '【一眼识别】构造柱：门洞两侧及长墙中部必须设构造柱',
+      '【工艺检查】灰缝厚度：水平灰缝8-12mm，竖向灰缝不小于5mm',
+      '【工艺检查】脚手眼留设：不得在转角、门窗洞两侧留设',
+      '【工艺检查】抹灰层：总厚度超35mm必须设钢丝网'
+    ],
+    must_report_if: [
+      '发现砌体通缝超3皮砖',
+      '发现填充墙无拉结筋或漏设',
+      '发现新旧墙体交接处未做处理',
+      '发现抹灰层空鼓面积超400cm²'
+    ],
+    norms: `GB 50203-2011《砌体结构工程施工质量验收规范》\n第7.1.3条 填充墙砌至接近梁底时，必须留一定空隙，砌筑完后至少间隔7天再将其补砌挤紧。\n第5.2.3条 水平灰缝砂浆饱满度不低于80%，竖向灰缝不得出现透明缝、瞎缝、假缝。`,
+    anti_hallucination: '砌体留槎正常；外墙砌体表面有施工痕迹待抹灰正常；脚手眼待封堵正常。'
+  },
+  '机电': {
+    role_desc: '机电安装总工 | 30年建筑机电安装综合经验',
+    scope: '综合机电安装：风管、水管、桥架、设备基础，重点查综合排布和施工质量',
+    critical_hazards: [
+      '管线碰撞干涉影响使用功能或结构安全',
+      '支吊架共用且未经验算，超荷载承重',
+      '设备吊装孔封堵缺失，高空坠物风险',
+      '综合支吊架与主体结构固定不牢固',
+      '机房设备布置不符合操作维修间距要求'
+    ],
+    checklist: [
+      '【一眼识别】管线碰撞：机电管线之间或与结构碰撞立即报告',
+      '【一眼识别】支吊架：共用支吊架超荷载、间距过大立即报告',
+      '【一眼识别】标识：管道、桥架无标识或标识不清立即报告',
+      '【工艺检查】排布顺序：有压管让无压管，小管让大管，冷水管在下热水管在上',
+      '【工艺检查】穿墙套管：管道穿楼板、墙体必须加套管并封堵'
+    ],
+    must_report_if: [
+      '发现设备基础与设计偏差超允许值',
+      '发现机房防水套管缺失',
+      '发现设备安装未做接地'
+    ],
+    norms: `GB 50243-2016《通风与空调工程施工质量验收规范》\n第4.2.1条 各专业管线排布应综合协调，主要管线位置应符合设计要求。`,
+    anti_hallucination: 'BIM碰撞检测阶段标注不是实际碰撞；调试期间临时接线正常；设备就位前临时支撑不是支吊架不足。'
+  },
+  '水利': {
+    role_desc: '水利水电工程总工 | 30年大坝堤防渠道水闸施工经验',
+    scope: '围堰、大坝填筑、混凝土面板、溢洪道、水闸、渠道衬砌、压力钢管',
+    critical_hazards: [
+      '【致命】围堰填筑未按方案分层碾压或防渗措施缺失',
+      '【致命】帷幕灌浆压力超标导致地层抬动变形',
+      '混凝土面板堆石坝面板裂缝宽度超0.3mm未处理',
+      '大坝填筑料含水率超标或铺土过厚',
+      '溢洪道、消力池等泄洪建筑物混凝土蜂窝、孔洞'
+    ],
+    checklist: [
+      '【一眼识别】围堰施工：堰体分层填筑≤300mm，一次性填筑过高立即报告',
+      '【一眼识别】大坝填筑：铺土均匀、碾压痕迹清晰，弹簧土立即停工',
+      '【一眼识别】混凝土面板：无贯穿裂缝，接缝止水完好',
+      '【一眼识别】渠道衬砌：板厚均匀、伸缩缝填充饱满'
+    ],
+    must_report_if: [
+      '发现围堰渗漏、管涌、裂缝等险情',
+      '发现大坝填筑料含水率过大或弹簧土',
+      '发现混凝土结构有贯穿裂缝、蜂窝、孔洞',
+      '发现闸门启闭异常、制动失灵'
+    ],
+    norms: `SL 631-2012《水利水电工程单元工程施工质量验收评定标准-土石方工程》\n第4.2.3条 土方填筑必须分层碾压，每层厚度不大于300mm，压实度符合设计要求。`,
+    anti_hallucination: '施工缝凿毛处理正常；临时排水沟不是永久排水；养护期混凝土表面湿润不是渗漏。'
+  },
+  '环保': {
+    role_desc: '环境工程师 | 30年施工现场环保文明施工管理经验',
+    scope: '扬尘控制、噪声污染、废水处理、固废管理、围挡设置、文明施工',
+    critical_hazards: [
+      '裸土未覆盖或覆盖不完整造成扬尘',
+      '施工现场未设围挡或围挡严重破损',
+      '施工污水直排或未经沉淀排放',
+      '焚烧建筑垃圾或废弃物'
+    ],
+    checklist: [
+      '【一眼识别】裸土覆盖：绿色密目网全覆盖，破损立即更换',
+      '【一眼识别】围挡：市区≥2.5m，郊区≥1.8m，破损修复',
+      '【一眼识别】道路硬化：场内主要道路必须硬化处理',
+      '【一眼识别】沉淀池：三级沉淀，定期清淤',
+      '【工艺检查】喷淋系统：塔吊喷淋、围挡喷淋是否正常运行'
+    ],
+    must_report_if: [
+      '发现扬尘污染严重',
+      '发现污水直排市政管网',
+      '发现垃圾焚烧'
+    ],
+    norms: `GB 50720-2011《建设工程施工现场环境与卫生标准》\n第4.2.1条 施工现场主要道路必须硬化处理，裸露场地和集中堆放土方应覆盖、固化或绿化。\n第4.3.1条 施工现场应设置排水沟及沉淀池，污水经沉淀达标后方可排放。`,
+    anti_hallucination: '短时扬尘配合雾炮使用正常；雾天能见度低不是扬尘；少量生活垃圾分类存放待运正常。'
+  },
+  '电气': {
+    role_desc: '注册电气工程师 | 30年变配电及施工现场临时用电经验',
+    scope: '临时用电系统、配电箱、电缆敷设、接地保护、开关、桥架',
+    critical_hazards: [
+      '临时用电未采用TN-S接零保护系统',
+      '配电箱未做重复接地或接地电阻大于10Ω',
+      '一闸多机（一个开关控制多台设备）',
+      '电缆直接拖地或浸水',
+      '带电体裸露无防护罩'
+    ],
+    checklist: [
+      '【一眼识别】电线颜色：黄绿双色只能是PE线，用作他途立即报告',
+      '【一眼识别】配电箱门：必须有跨接软铜线，缺失立即报告',
+      '【一眼识别】电缆敷设：直接拖地、过路无保护管立即报告',
+      '【一眼识别】绝缘破损：电线绝缘层破损、老化开裂立即报告',
+      '【工艺检查】箱内接线：一机一闸一漏一箱，多机共用开关立即报告'
+    ],
+    must_report_if: [
+      '发现开关箱内积尘、积水或有异物',
+      '发现漏电保护器失效或拆除',
+      '发现电缆接头裸露无绝缘包扎',
+      '发现配电箱未上锁或箱门缺失'
+    ],
+    norms: `JGJ 46-2005《施工现场临时用电安全技术规范》\n第8.1.3条 每台用电设备必须有各自专用开关箱，严禁一闸控制2台及以上设备。\n第5.1.1条 临时用电必须采用TN-S接零保护系统，三级配电两级保护。`,
+    anti_hallucination: '施工中临时接线待整理正常；旧规范PE线可能不是黄绿双色；备用回路不是故障。'
+  },
+  '结构': {
+    role_desc: '结构总工程师 | 30年混凝土及钢结构工程经验',
+    scope: '模板支撑体系、钢筋绑扎、混凝土浇筑、钢结构制作安装',
+    critical_hazards: [
+      '模板支撑体系立杆悬空或垫板缺失',
+      '高大模板未设扫地杆、剪刀撑',
+      '钢筋主筋位置错误（梁底筋放成面筋）',
+      '混凝土浇筑后出现贯穿裂缝',
+      '钢结构高强螺栓未终拧或梅花头未拧掉'
+    ],
+    checklist: [
+      '【一眼识别】立杆底部：悬空、无垫板、垫板破裂立即报告',
+      '【一眼识别】钢筋间距：明显不均匀或露筋立即报告',
+      '【一眼识别】混凝土裂缝：宽度超0.3mm或贯穿性裂缝立即报告',
+      '【一眼识别】模板变形：鼓胀、扭曲、下沉立即报告',
+      '【工艺检查】钢筋绑扎：梁柱节点核心区箍筋不得遗漏'
+    ],
+    must_report_if: [
+      '发现模板支撑立杆间距大于方案要求',
+      '发现梁底模板下挠或支撑松动',
+      '发现钢筋规格型号与设计不符',
+      '发现混凝土蜂窝、孔洞、夹渣'
+    ],
+    norms: `JGJ 162-2008《建筑施工模板安全技术规范》\n第6.1.2条 模板支架立杆底部必须设置垫板，严禁悬空，垫板厚度≥50mm。\nGB 50204-2015《混凝土结构工程施工质量验收规范》\n第5.5.1条 钢筋保护层厚度必须达标。`,
+    anti_hallucination: '待绑扎区域钢筋散乱正常；温度发丝裂缝不是结构裂缝；施工缝凿毛处理后的粗糙面正常。'
+  },
+  '给排水': {
+    role_desc: '给排水工程师 | 30年市政及建筑给排水工程经验',
+    scope: '给水管道、排水管道、消防给水、热水系统、检查井、水泵',
+    critical_hazards: [
+      '排水管道倒坡或坡度严重不足',
+      '压力管道未做强度试验',
+      '排水管道未做闭水试验',
+      '消防管道阀门常闭未锁定'
+    ],
+    checklist: [
+      '【一眼识别】管道坡度：排水管道倒坡立即报告',
+      '【一眼识别】管道支墩：大口径管道无支墩立即报告',
+      '【一眼识别】检查井：井盖破损、井内淤堵、漏水立即报告',
+      '【一眼识别】消防栓：无水、配件缺失、标识不清立即报告',
+      '【工艺检查】地漏水封：水封深度不小于50mm'
+    ],
+    must_report_if: [
+      '发现管道渗漏',
+      '发现阀门启闭不灵活或标识缺失',
+      '发现消防管道擅自截断或降压'
+    ],
+    norms: `GB 50268-2008《给水排水管道工程施工及验收规范》\n第9.1.1条 压力管道必须进行水压试验，试验压力为工作压力的1.5倍。`,
+    anti_hallucination: '施工阶段未通水正常；临时排水管正常；试压用临时支撑不是支架不足。'
+  },
+  '基坑': {
+    role_desc: '岩土工程师 | 30年深基坑支护及降水工程经验',
+    scope: '基坑开挖、围护结构、锚杆土钉、降水系统、临边防护',
+    critical_hazards: [
+      '基坑开挖超过5m无专项方案或未按方案支护',
+      '基坑边堆载超过设计限值（堆土、堆料、机械停放）',
+      '支护结构出现明显裂缝、位移、渗漏',
+      '上下基坑无专用通道',
+      '基坑监测数据超预警值未停工处理'
+    ],
+    checklist: [
+      '【一眼识别】坑边堆载：坑边1m内堆土、堆料立即报告',
+      '【一眼识别】临边防护：护栏不足1.2m或损坏立即报告',
+      '【一眼识别】支护裂缝：喷锚面裂缝宽度超5mm立即报告',
+      '【一眼识别】坑底积水：大面积积水或管涌现象立即报告',
+      '【工艺检查】上下通道：专用梯道宽度≥1m，两侧设扶手'
+    ],
+    must_report_if: [
+      '发现支护结构有明显位移或变形',
+      '发现基坑周边地面开裂',
+      '发现锚杆、土钉拔出力不足'
+    ],
+    norms: `JGJ 120-2012《建筑基坑支护技术规程》\n第8.1.1条 基坑周边1m范围内不得堆载，3m内堆载不超设计荷载限值。\n第8.1.4条 基坑开挖过程必须采取降排水措施，坑底不得长期浸泡。`,
+    anti_hallucination: '雨后坑边少量积水及时抽排正常；临时堆土待运不是违规；基坑底部正常施工积水不是管涌。'
+  },
+  '边坡': {
+    role_desc: '岩土与边坡工程专家 | 30年高边坡防护与治理经验',
+    scope: '岩质边坡、土质边坡、挡土墙、锚索锚杆、格构梁、坡面防护',
+    critical_hazards: [
+      '【致命】高边坡(超30m)开挖无支护或支护严重滞后于开挖',
+      '【致命】边坡出现贯穿性裂缝、坡脚隆起或塌方预兆',
+      '锚杆(索)预应力不足或存在松弛',
+      '截水沟、排水沟堵塞导致水流渗入坡体',
+      '坡面防护破损、脱落、悬空'
+    ],
+    checklist: [
+      '【一眼识别】坡面裂缝：横向贯穿裂缝立即报告（滑坡预兆）',
+      '【一眼识别】坡脚变形：隆起、鼓胀立即报告',
+      '【一眼识别】坡面防护：格构破裂、喷锚脱落立即报告',
+      '【一眼识别】坡顶堆载：坡顶1.5倍坡高范围内堆载立即报告',
+      '【一眼识别】截排水：截水沟堵塞、排水沟损坏立即报告'
+    ],
+    must_report_if: [
+      '发现坡面出现新的裂缝或裂缝扩展',
+      '发现坡体有异常渗水、泉水出现',
+      '发现坡面防护大面积脱落'
+    ],
+    norms: `GB 50330-2013《建筑边坡工程技术规范》\n第4.1.1条 边坡工程设计应根据边坡类别、高度和工程地质条件确定支护形式。`,
+    anti_hallucination: '坡面施工扰动产生的浅层松动正常；雨后坡面湿润不是渗水；局部出露岩石不是坡体失稳。'
+  },
+  '隧洞': {
+    role_desc: '隧道与地下工程专家 | 30年山岭隧道及城市地下工程经验',
+    scope: '隧道开挖、初期支护、二次衬砌、通风照明、防排水',
+    critical_hazards: [
+      '【致命】隧洞开挖未执行短进尺、弱爆破、强支护原则',
+      '【致命】拱架(型钢/格栅)变形、扭曲或间距严重超标',
+      '【致命】掌子面超前支护不到位或缺失',
+      '【致命】喷射混凝土厚度严重不足(<50mm)',
+      '通风系统失效导致有毒有害气体超标'
+    ],
+    checklist: [
+      '【一眼识别】拱架间距：超设计间距50mm以上立即报告',
+      '【一眼识别】锁脚锚杆：每榀拱架锁脚锚杆不得遗漏',
+      '【一眼识别】喷射混凝土：厚度不足50mm立即报告',
+      '【一眼识别】超前支护：超前小导管或锚杆是否施作',
+      '【一眼识别】通风管：通风管破损、接头漏风立即修复'
+    ],
+    must_report_if: [
+      '发现初期支护开裂、变形、鼓起',
+      '发现掌子面涌水、涌砂',
+      '发现有毒有害气体超标',
+      '发现二衬背后存在空洞'
+    ],
+    norms: `SL 279-2016《水工隧洞设计规范》\n第8.3.1条 初期支护应紧跟掌子面，喷射混凝土厚度不小于设计厚度的90%。`,
+    anti_hallucination: '洞内湿气较大不是渗漏；养护洒水不是漏水；通风管临时断开维修正常。'
+  },
+  '管道': {
+    role_desc: '管道与阀门工艺专家 | 30年压力管道安装工程经验',
+    scope: '工艺管道、压力管道、阀门法兰、焊缝质量、支吊架',
+    critical_hazards: [
+      '压力管道使用非压力管道管材（排水管代替给水管）',
+      '阀门无标识或标识错误（介质流向、压力等级）',
+      '法兰垫片使用错误（石棉垫片用于高温高压）',
+      '管道支吊架间距过大导致管道下垂',
+      '焊缝有裂纹、未熔合、夹渣、气孔等缺陷'
+    ],
+    checklist: [
+      '【一眼识别】管道颜色：红色消防、绿色给水、蓝色排水、黄色燃气，颜色错误立即报告',
+      '【一眼识别】法兰螺栓：必须露出2-3扣，少于2扣未紧固',
+      '【一眼识别】阀门手轮方向：向上或向外正确，向下错误（无法操作）',
+      '【工艺检查】支吊架间距：DN50不超5m，DN100不超6m',
+      '【工艺检查】焊缝外观：无裂纹、未熔合、夹渣、气孔'
+    ],
+    must_report_if: [
+      '发现管道有凹陷、裂纹、严重腐蚀',
+      '发现法兰垫片外露不均匀或偏置',
+      '发现不同材质管道直接焊接无过渡件'
+    ],
+    norms: `GB 50242-2002《建筑给水排水及采暖工程施工质量验收规范》\n第3.3.13条 法兰螺栓紧固后露出螺母2-3扣，垫片不突入管内。\n第3.3.15条 阀门安装前必须做强度和严密性试验，止回阀方向正确。`,
+    anti_hallucination: '临时封堵盲板不是缺阀门；试压用临时支撑不是支架不足；保温层接缝不是裂缝。'
   }
-  return bigrams;
+};
+
+// =============================================
+// 路由提示词（V7：14个专家）
+// =============================================
+const ROUTER_PROMPT = `你是一名拥有25年经验的工程建设总监。请仔细扫描施工现场图片，快速识别核心施工内容，指派3-6名最对口的技术专家。
+
+【可选专家】（共14个，必须从此列表选择）：
+安全、消防、机械、土建、机电、水利、环保、电气、结构、给排水、基坑、边坡、隧洞、管道
+
+【强制规则】：
+R1. 始终包含"安全"专家（100%必选）。
+R2. 图片模糊或无法识别具体内容，仅输出["安全"]。
+R3. 看到起重机械、挖掘机、装载机、塔吊、吊车、吊篮、混凝土泵车 → 必选"机械"。
+R4. 看到配电箱、电缆、桥架、临时用电设施 → 必选"电气"。
+R5. 看到模板支撑、钢筋绑扎、混凝土浇筑、钢结构 → 必选"结构"。
+R6. 看到基坑开挖、围护桩、支撑、降水井 → 必选"基坑"。
+R7. 看到山体边坡、岩石开挖、挡土墙、格构梁、锚索 → 必选"边坡"。
+R8. 看到隧洞开挖、拱架、喷锚支护、掌子面 → 必选"隧洞"。
+R9. 看到大坝、堤防、围堰、水闸、渠道、溢洪道 → 必选"水利"。
+R10. 看到气瓶、动火作业、气焊气割 → 必选"消防"。
+R11. 看到工艺管道、阀门、法兰、压力管道 → 必选"管道"。
+R12. 看到多专业综合管线(风管+水管+桥架) → 必选"机电"。
+R13. 看到砌体、砌砖、抹灰、屋面、门窗 → 必选"土建"。
+R14. 看到扬尘、裸土、围挡、建筑垃圾、污水排放 → 必选"环保"。
+R15. 看到给排水管道、检查井、消防栓、水泵 → 必选"给排水"。
+
+【专家数量控制】：精确选派，不超过6个，优先选最相关的专家。
+
+输出格式：只输出JSON数组，不要其他文字。
+示例：["机械","安全","结构"]`;
+
+// 移除排他性指令，让专家发挥全力
+function buildExpertPrompt(role, kb, promptMode) {
+  const criticalStr = kb.critical_hazards.map(h=>`⚠️ ${h}`).join('\n');
+  const checklistStr = kb.checklist.map(c=>`🔍 ${c}`).join('\n');
+  const mustReportStr = kb.must_report_if.map(m=>`✅ ${m}`).join('\n');
+
+  let modeNote = '';
+  if(promptMode==='safety') modeNote='\n⚡ 本次任务：仅识别安全隐患，忽略质量问题。';
+  else if(promptMode==='quality') modeNote='\n⚡ 本次任务：仅识别质量缺陷，忽略安全隐患。';
+  else if(promptMode==='critical') modeNote='\n⚡ 本次任务：仅识别严重安全隐患，只输出risk_level为"严重安全隐患"的条目。';
+
+  return `你是一名【${role}】（${kb.role_desc}），拥有30年一线经验。你刚检查完现场，现在要写整改通知单。${modeNote}
+
+请专注你所在专业范畴（${kb.scope}），发现任何隐患必须报告，不要因为认为"其他专家会报告"而选择忽略！
+
+## 典型重大隐患清单（必须重点检查）
+${criticalStr}
+⚠️ 如果发现上述任一情形，必须立即报告为"严重安全隐患"！
+
+## 深度检查清单（按此逐项扫描）
+${checklistStr}
+
+## 必须报告的情形
+${mustReportStr}
+✅ 发现上述任一情形，直接报告，不要犹豫！
+
+## 核心规范依据（引用条文必须准确）
+${kb.norms}
+
+## 误判警示（以下情况不要误报）
+${kb.anti_hallucination}
+
+## 输出格式要求（JSON数组）
+每个问题必须包含：
+- risk_level: "严重安全隐患"/"一般安全隐患"/"严重质量缺陷"/"一般质量缺陷"
+- issue: 具体描述（说人话，不要套话，不超过80字）
+- regulation: 规范条文号（如"GB 50242-2002 第3.3.15条"）
+- correction: 整改措施（具体可执行，如"立即停工，更换合格管材"）
+- confidence: 0.0-1.0（不确定给0.6-0.7）
+
+输出示例：
+[{"risk_level":"严重安全隐患","issue":"具体问题描述","regulation":"规范 第X条","correction":"整改措施","confidence":0.95}]
+
+最后强调：
+1. 不要说"可能存在""疑似"，要给出明确判断
+2. 不要说"建议"，要说"必须""立即"
+3. 问题描述要具体（如"DN100止回阀装反"而不是"阀门安装不规范"）
+4. 看到典型重大隐患必须报告为"严重安全隐患"
+5. 如果图片中确实没有${role}专业的问题，输出空数组[]`;
 }
 
-/**
- * 计算两个 Bigram 集合的 Dice 系数
- * Dice = 2 * |A ∩ B| / (|A| + |B|)
- * 返回值：0.0 ~ 1.0
- */
-function diceCoefficient(setA, setB) {
-  if (setA.size === 0 || setB.size === 0) return 0;
-  if (setA === setB) return 1;
-  
-  let intersection = 0;
-  for (const item of setA) {
-    if (setB.has(item)) intersection++;
-  }
-  
-  return (2 * intersection) / (setA.size + setB.size);
-}
-
-/**
- * 综合相似度计算：Bigram Dice + 语义权重
- * - Bigram Dice 系数占 70%
- * - 长度相似度占 15%
- * - 首尾字符匹配占 15%
- */
-function calculateSimilarity(textA, textB) {
-  if (!textA || !textB) return 0;
-  if (textA === textB) return 1;
-  
-  // 1. Bigram Dice 系数（主要权重）
-  const bigramsA = generateBigrams(textA);
-  const bigramsB = generateBigrams(textB);
-  const diceScore = diceCoefficient(bigramsA, bigramsB);
-  
-  // 2. 长度相似度（辅助权重）
-  const lenA = textA.length;
-  const lenB = textB.length;
-  const lenScore = Math.min(lenA, lenB) / Math.max(lenA, lenB);
-  
-  // 3. 首尾字符匹配（辅助权重）
-  let headTailScore = 0;
-  if (textA[0] === textB[0]) headTailScore += 0.5;
-  if (textA[textA.length - 1] === textB[textB.length - 1]) headTailScore += 0.5;
-  
-  // 加权平均
-  const finalScore = diceScore * 0.70 + lenScore * 0.15 + headTailScore * 0.15;
-  return Math.min(finalScore, 1);
-}
-
-/**
- * 提取核心内容（去除专家标签和修饰词）
- */
-function extractCore(text) {
-  return text
-    .replace(/【[^】]+】/g, '')           // 去除【专家名】
-    .replace(/立即 | 必须 | 严禁 | 发现 | 存在 | 现场/g, '')
-    .replace(/\s+/g, '')
-    .toLowerCase()
-    .trim();
-}
-
-/**
- * V3.0 升级版去重算法：N-Gram 相似度 + 置信度排序 + 信息融合
- * 
- * 核心逻辑：
- * 1. 按置信度从高到低排序，优先保留高确信度的问题
- * 2. 使用 Bigram Dice 系数计算文本相似度
- * 3. 同一问题被多个专家发现时，合并专家标签
- */
-function deduplicateIssues(issues) {
-  if (!issues.length) return [];
-  
-  // Step 1: 按置信度降序排序（优先保留高确信度）
-  const sortedIssues = [...issues].sort((a, b) => {
-    const confA = a.confidence || 0;
-    const confB = b.confidence || 0;
-    return confB - confA;
-  });
-  
-  // Step 2: 相似度分组融合
-  const result = [];
-  const used = new Array(sortedIssues.length).fill(false);
-  
-  for (let i = 0; i < sortedIssues.length; i++) {
-    if (used[i]) continue;
-    
-    const current = sortedIssues[i];
-    const group = [current];
-    used[i] = true;
-    
-    // 查找与当前问题相似的其他问题
-    for (let j = i + 1; j < sortedIssues.length; j++) {
-      if (used[j]) continue;
-      
-      const other = sortedIssues[j];
-      const coreA = extractCore(current.issue || '');
-      const coreB = extractCore(other.issue || '');
-      
-      // 使用 Bigram Dice 系数计算相似度
-      const similarity = calculateSimilarity(coreA, coreB);
-      
-      // 相似度阈值：0.65（比 V2.1 的 0.70 更严格）
-      if (similarity >= 0.65) {
-        group.push(other);
-        used[j] = true;
-      }
-    }
-    
-    // Step 3: 融合组内信息
-    const fused = fuseGroupIssues(group);
-    result.push(fused);
-  }
-  
-  return result;
-}
-
-/**
- * 融合组内多个专家发现的问题
- * - 合并专家标签：【安全】+【土建】→【安全、土建】
- * - 保留最高置信度
- * - 合并整改措施和规范依据
- */
-function fuseGroupIssues(group) {
-  if (group.length === 1) return group[0];
-  
-  // 收集所有专家标签
-  const experts = new Set();
-  let bestConfidence = 0;
-  let bestIssue = '';
-  const allRegulations = new Set();
-  const allCorrections = new Set();
-  
-  group.forEach(item => {
-    // 提取专家标签
-    const match = (item.issue || '').match(/【([^】]+)】/);
-    if (match) experts.add(match[1]);
-    
-    // 保留最高置信度的问题描述
-    if ((item.confidence || 0) > bestConfidence) {
-      bestConfidence = item.confidence;
-      bestIssue = item.issue;
-    }
-    
-    // 收集规范依据和整改措施
-    if (item.regulation) allRegulations.add(item.regulation);
-    if (item.correction) allCorrections.add(item.correction);
-  });
-  
-  // 构建融合后的问题
-  const fused = { ...group[0] };
-  
-  // 合并专家标签
-  if (experts.size > 1) {
-    const expertArray = Array.from(experts);
-    fused.experts = expertArray;
-    fused.expertLabel = expertArray.join('、');
-    // 更新问题描述中的标签
-    fused.issue = `【${fused.expertLabel}】${bestIssue.replace(/【[^】]+】/, '')}`;
-  }
-  
-  // 保留最高置信度
-  fused.confidence = bestConfidence;
-  
-  // 合并规范依据和整改措施
-  if (allRegulations.size > 0) {
-    fused.regulation = Array.from(allRegulations).join('\n\n');
-  }
-  if (allCorrections.size > 0) {
-    fused.correction = Array.from(allCorrections).join('\n\n');
-  }
-  
-  return fused;
-}
-
 // =============================================
-// Toast 队列化系统
+// 状态
 // =============================================
-const toastQueue = [];
-let isShowingToast = false;
+let tasks = [], config = {api_key:'', provider:'qwen-vl-max'};
+let currentTab = 0, currentDetailTask = null;
+let editingItem = null, editingTaskId = null;
+let totalAnalyzing = 0, doneAnalyzing = 0;
 
-/**
- * 显示 Toast（队列化）
- */
-function showToast(message, duration = 2000) {
-  toastQueue.push({ message, duration });
-  if (!isShowingToast) {
-    processToastQueue();
-  }
-}
-
-/**
- * 处理 Toast 队列
- */
-function processToastQueue() {
-  if (toastQueue.length === 0) {
-    isShowingToast = false;
-    return;
-  }
-  
-  isShowingToast = true;
-  const { message, duration } = toastQueue.shift();
-  
-  const container = document.getElementById('toast-container');
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.textContent = message;
-  container.appendChild(toast);
-  
-  // 触发动画
-  requestAnimationFrame(() => {
-    toast.classList.add('show');
-  });
-  
-  // 移除 Toast
-  setTimeout(() => {
-    toast.classList.add('hiding');
-    setTimeout(() => {
-      container.removeChild(toast);
-      processToastQueue();
-    }, 300);
-  }, duration);
-}
-
-// =============================================
-// 全局变量
-// =============================================
-let tasks = [];
-let config = { api_key: '', provider: 'qwen-vl-max' };
-let currentDetailTask = null;
-let totalAnalyzing = 0;
-let doneAnalyzing = 0;
-let zoomScale = 1;
-let fullscreenZoom = 1;
-
-// =============================================
-// 初始化
-// =============================================
-window.addEventListener('DOMContentLoaded', () => {
-  loadConfig();
-  loadTasks();
-  renderTaskList();
-  updateCountBadge();
-});
-
-// =============================================
-// 配置管理
-// =============================================
 function loadConfig() {
-  const saved = localStorage.getItem('safety_config');
-  if (saved) {
-    try {
-      config = JSON.parse(saved);
-      document.getElementById('s-apikey').value = config.api_key || '';
-      document.getElementById('s-provider').value = config.provider || 'qwen-vl-max';
-    } catch (e) {}
-  }
+  try{const s=localStorage.getItem('sc_cfg');if(s) config=JSON.parse(s);}catch(e){}
+  document.getElementById('s-apikey').value=config.api_key||'';
+  document.getElementById('s-provider').value=config.provider||'qwen-vl-max';
 }
-
 function saveSettings() {
-  config.api_key = document.getElementById('s-apikey').value.trim();
-  config.provider = document.getElementById('s-provider').value;
-  localStorage.setItem('safety_config', JSON.stringify(config));
-  showToast('✅ 设置已保存');
+  config.api_key=document.getElementById('s-apikey').value.trim();
+  config.provider=document.getElementById('s-provider').value;
+  localStorage.setItem('sc_cfg', JSON.stringify(config));
+  showToast('✓ 设置已保存');
 }
 
-// =============================================
-// 任务管理
-// =============================================
-function loadTasks() {
-  const saved = localStorage.getItem('safety_tasks');
-  if (saved) {
-    try {
-      tasks = JSON.parse(saved);
-    } catch (e) {}
-  }
+function switchTab(idx) {
+  currentTab=idx;
+  ['view-home','view-summary','view-detail','view-settings'].forEach((id,i)=>{
+    document.getElementById(id).classList.toggle('active',i===idx);
+  });
+  ['nav-home','nav-summary','nav-add','nav-settings'].forEach((id,i)=>{
+    const navIdx=[0,1,99,3][i];
+    document.getElementById(id).classList.toggle('active',navIdx===idx);
+  });
+  if(idx===1) renderSummary();
 }
+function showAddMenu(){openModal('modal-add');}
 
-function saveTasks() {
-  localStorage.setItem('safety_tasks', JSON.stringify(tasks));
+function pickFiles(src){
+  if(src==='camera') document.getElementById('file-camera').click();
+  else document.getElementById('file-gallery').click();
 }
-
-function renderTaskList() {
-  const listEl = document.getElementById('task-list');
-  const emptyEl = document.getElementById('empty-state');
-  
-  if (tasks.length === 0) {
-    listEl.style.display = 'none';
-    emptyEl.style.display = 'flex';
-    return;
-  }
-  
-  emptyEl.style.display = 'none';
-  listEl.style.display = 'flex';
-  listEl.innerHTML = '';
-  
-  tasks.forEach((task, index) => {
-    const row = createTaskRow(task, index);
-    listEl.appendChild(row);
-    // 添加入场动画
-    row.classList.add('fade-in-up');
-    row.style.animationDelay = `${index * 0.05}s`;
+function handleFiles(files){
+  if(!files||!files.length) return;
+  const allowed=20-tasks.length;
+  if(allowed<=0){showToast('最多支持20张');return;}
+  let added=0;
+  Array.from(files).slice(0,allowed).forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const task={id:`${Date.now()}_${Math.random()}`,name:f.name,dataUrl:e.target.result,status:'waiting',data:null};
+      tasks.push(task);
+      addTaskRow(task);
+      added++;
+      updateCount();
+      if(added===Math.min(files.length,allowed)) showToast(`✓ 已添加${added}张图片`);
+    };
+    reader.readAsDataURL(f);
   });
 }
 
-function createTaskRow(task, index) {
-  const row = document.createElement('div');
-  row.className = 'task-row';
-  
-  const statusMap = {
-    'waiting': { text: '⏳ 等待分析', color: 'var(--text-hint)' },
-    'analyzing': { text: '🔄 分析中...', color: 'var(--primary)' },
-    'done': { text: `✅ ${task.data?.length || 0}个问题`, color: 'var(--success)' },
-    'error': { text: `❌ ${task.error || '错误'}`, color: 'var(--danger)' }
-  };
-  const status = statusMap[task.status] || statusMap['waiting'];
-  
-  row.innerHTML = `
+function updateCount(){
+  document.getElementById('count-badge').textContent=`${tasks.length}/20`;
+  const empty=document.getElementById('empty-state');
+  const list=document.getElementById('task-list');
+  if(tasks.length===0){empty.style.display='flex';list.style.display='none';}
+  else{empty.style.display='none';list.style.display='flex';}
+}
+
+function addTaskRow(task){
+  const list=document.getElementById('task-list');
+  const row=document.createElement('div');
+  row.className='task-row fade-in';
+  row.id='row-'+task.id;
+  row.onclick=()=>openDetail(task);
+  row.innerHTML=`
     <img class="task-thumb" src="${task.dataUrl}" alt="">
     <div class="task-info">
-      <div class="task-name">${task.name}</div>
-      <div class="task-status" style="color:${status.color}">${status.text}</div>
+      <div class="task-name">${escHtml(task.name)}</div>
+      <div class="task-status" id="status-${task.id}">⏳ 等待中</div>
     </div>
-    <span class="task-dot" style="color:${status.color}">●</span>
-    <span class="task-arrow">›</span>
-  `;
-  
-  row.addEventListener('click', () => openDetail(task));
-  return row;
+    <span class="task-dot" id="dot-${task.id}">⏳</span>
+    <span class="task-arrow">›</span>`;
+  list.appendChild(row);
+}
+function updateTaskStatus(id,status,detail){
+  const el=document.getElementById('status-'+id),dot=document.getElementById('dot-'+id);
+  if(!el) return;
+  const map={waiting:['⏳','#9CA3AF','等待中'],analyzing:['🔄','#1A56DB',detail||'分析中'],done:['✅','#057A55',detail||'完成'],error:['❌','#E02424',detail||'失败']};
+  const [icon,color,text]=map[status]||map.waiting;
+  if(dot) dot.textContent=icon;
+  el.textContent=text;el.style.color=color;
 }
 
-function updateTaskStatus(taskId, status, progressMsg) {
-  const task = tasks.find(t => t.id === taskId);
-  if (task) {
-    task.status = status;
-    if (progressMsg) task.progress_msg = progressMsg;
-    saveTasks();
-    renderTaskList();
-    if (currentDetailTask?.id === taskId) {
-      renderDetailContent(task);
+async function startAnalysis(){
+  if(!config.api_key){showToast('⚠️ 请先在设置中配置 API Key');setTimeout(()=>switchTab(3),600);return;}
+  const waiting=tasks.filter(t=>t.status==='waiting'||t.status==='error');
+  if(!waiting.length){showToast('没有待分析的图片');return;}
+  totalAnalyzing=waiting.length;doneAnalyzing=0;
+  setProgress(0,true);setStatus(`正在分析${waiting.length}张...`);
+  const promptMode=document.getElementById('prompt-select').value;
+  waiting.forEach(task=>{task.status='analyzing';updateTaskStatus(task.id,'analyzing');analyzeTask(task,promptMode);});
+}
+
+async function analyzeTask(task, promptMode){
+  try{
+    const preset=PROVIDERS[config.provider];
+    const b64=task.dataUrl.split(',')[1];
+    task.progress_msg='🔍 智能分诊中...';
+    updateTaskStatus(task.id,'analyzing','🔍 智能分诊中...');
+    if(currentDetailTask?.id===task.id) renderDetailContent(task);
+
+    const routerResp=await callAI(preset,ROUTER_PROMPT,'请分析施工内容并选派专家，只输出JSON数组',b64,0.1,256);
+    let roles=parseRoles(routerResp);
+    if(!roles.length) roles=['安全'];
+    roles=roles.filter(r=>REGULATION_DB[r]);
+    if(!roles.includes('安全')) roles.unshift('安全');
+    if(roles.length>6) roles=roles.slice(0,6);
+
+    const allRawIssues=[];
+    for(let i=0;i<roles.length;i++){
+      const role=roles[i];
+      task.progress_msg=`🔬 ${role}专家分析 (${i+1}/${roles.length})`;
+      updateTaskStatus(task.id,'analyzing',task.progress_msg);
+      if(currentDetailTask?.id===task.id) renderDetailContent(task);
+      const kb=REGULATION_DB[role];
+      const resp=await callAI(preset,buildExpertPrompt(role,kb,promptMode),'请分析图片，找出所有问题。只输出JSON数组。',b64,0.3,2048);
+      allRawIssues.push(...parseIssues(resp,role));
     }
-  }
-}
 
-function updateCountBadge() {
-  const total = tasks.reduce((sum, t) => sum + (t.data?.length || 0), 0);
-  document.getElementById('count-badge').textContent = `${total}/20`;
-}
-
-// =============================================
-// 文件处理
-// =============================================
-function showAddMenu() {
-  document.getElementById('modal-add').classList.add('open');
-}
-
-function pickFiles(source) {
-  document.getElementById(`file-${source}`).click();
-}
-
-function handleFiles(files) {
-  if (!files.length) return;
-  
-  const remaining = 20 - tasks.length;
-  if (remaining <= 0) {
-    showToast('⚠️ 最多支持 20 张图片');
-    return;
+    task.data=deduplicateIssues(allRawIssues);
+    task.status='done';
+    const cnt=task.data.length;
+    updateTaskStatus(task.id,'done',cnt?`发现${cnt}个问题`:'未发现问题');
+  }catch(err){
+    task.status='error';task.error=err.message||'网络错误';
+    updateTaskStatus(task.id,'error',task.error.slice(0,30));
   }
-  
-  const toAdd = Math.min(files.length, remaining);
-  
-  for (let i = 0; i < toAdd; i++) {
-    const file = files[i];
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const task = {
-        id: Date.now() + Math.random(),
-        name: file.name,
-        dataUrl: e.target.result,
-        status: 'waiting',
-        data: []
-      };
-      tasks.push(task);
-      saveTasks();
-      renderTaskList();
-      updateCountBadge();
-      
-      // 如果是最后一张，显示提示
-      if (tasks.length === 20) {
-        showToast('✅ 已达最大数量 20 张');
-      }
-    };
-    reader.readAsDataURL(file);
-  }
-  
-  if (files.length > remaining) {
-    showToast(`⚠️ 仅添加前${remaining}张`);
-  }
-}
-
-// =============================================
-// AI 分析（V3.0 升级版）
-// =============================================
-async function startAnalysis() {
-  if (!config.api_key) {
-    showToast('⚠️ 请先在设置中配置 API Key');
-    setTimeout(() => switchTab(3), 600);
-    return;
-  }
-  
-  const waiting = tasks.filter(t => t.status === 'waiting' || t.status === 'error');
-  if (!waiting.length) {
-    showToast('没有待分析的图片');
-    return;
-  }
-  
-  totalAnalyzing = waiting.length;
-  doneAnalyzing = 0;
-  setProgress(0, true);
-  setStatus(`正在分析${waiting.length}张...`);
-  
-  const promptMode = document.getElementById('prompt-select').value;
-  
-  waiting.forEach(task => {
-    task.status = 'analyzing';
-    updateTaskStatus(task.id, 'analyzing');
-    analyzeTask(task, promptMode);
-  });
-}
-
-async function analyzeTask(task, promptMode) {
-  try {
-    const preset = PROVIDERS[config.provider];
-    const b64 = task.dataUrl.split(',')[1];
-    
-    task.progress_msg = '🔍 智能分诊中...';
-    updateTaskStatus(task.id, 'analyzing', task.progress_msg);
-    if (currentDetailTask?.id === task.id) renderDetailContent(task);
-    
-    // Step1: 路由分诊
-    const routerResp = await callAI(preset, ROUTER_PROMPT, '请分析施工内容并选派专家，只输出 JSON 数组', b64, 0.1, 256);
-    let roles = parseRoles(routerResp);
-    if (!roles.length) roles = ['安全'];
-    roles = roles.filter(r => REGULATION_DB[r]);
-    if (!roles.includes('安全')) roles.unshift('安全');
-    if (roles.length > 6) roles = roles.slice(0, 6);
-    
-    // Step2: 各专家并行分析
-    const allRawIssues = [];
-    for (let i = 0; i < roles.length; i++) {
-      const role = roles[i];
-      const otherRoles = roles.filter(r => r !== role);
-      task.progress_msg = `🔬 ${role}专家分析 (${i + 1}/${roles.length})`;
-      updateTaskStatus(task.id, 'analyzing', task.progress_msg);
-      if (currentDetailTask?.id === task.id) renderDetailContent(task);
-      
-      const kb = REGULATION_DB[role];
-      const resp = await callAI(preset, buildExpertPrompt(role, kb, promptMode, otherRoles), 
-        '请分析图片，找出所有问题。只输出 JSON 数组。', b64, 0.3, 2048);
-      allRawIssues.push(...parseIssues(resp, role));
-    }
-    
-    // Step3: V3.0 升级版去重（N-Gram + 置信度 + 融合）
-    task.data = deduplicateIssues(allRawIssues);
-    task.status = 'done';
-    const cnt = task.data.length;
-    updateTaskStatus(task.id, 'done', cnt ? `发现${cnt}个问题` : '未发现问题');
-    
-  } catch (err) {
-    task.status = 'error';
-    task.error = err.message || '网络错误';
-    updateTaskStatus(task.id, 'error', task.error.slice(0, 30));
-  }
-  
-  if (currentDetailTask?.id === task.id) renderDetailContent(task);
-  
+  if(currentDetailTask?.id===task.id) renderDetailContent(task);
   doneAnalyzing++;
-  setProgress(Math.round(doneAnalyzing / totalAnalyzing * 100), true);
-  
-  if (doneAnalyzing >= totalAnalyzing) {
-    setProgress(100, false);
-    const total = tasks.reduce((s, t) => s + (t.data?.length || 0), 0);
+  setProgress(Math.round(doneAnalyzing/totalAnalyzing*100),true);
+  if(doneAnalyzing>=totalAnalyzing){
+    setProgress(100,false);
+    const total=tasks.reduce((s,t)=>s+(t.data?.length||0),0);
     setStatus(`分析完成，共${total}个问题`);
     showToast(`✅ 分析完成！发现${total}个问题`);
   }
 }
 
 // =============================================
-// AI 调用
+// 高阶去重算法：放宽合并阈值，保留更多问题
 // =============================================
-async function callAI(preset, messages, userPrompt, b64, temperature = 0.3, maxTokens = 1024) {
-  const url = `${preset.url}/chat/completions`;
-  const payload = {
-    model: preset.model,
-    messages: [
-      ...messages,
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: userPrompt },
-          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${b64}` } }
-        ]
+function deduplicateIssues(issues) {
+  if (!issues || !issues.length) return [];
+  const result = [];
+  
+  const sortedIssues = [...issues].sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+
+  for (const item of sortedIssues) {
+    if (!item.issue) continue;
+    
+    const dupIndex = result.findIndex(existing => isSimilarIssue(item, existing));
+
+    if (dupIndex !== -1) {
+      const existing = result[dupIndex];
+      if (item.category && !existing.category.includes(item.category)) {
+        existing.category += `、${item.category}`;
+        existing.confidence = Math.min((existing.confidence || 0.8) + 0.05, 1.0); 
       }
-    ],
-    temperature,
-    max_tokens: maxTokens
-  };
+    } else {
+      result.push(JSON.parse(JSON.stringify(item)));
+    }
+  }
+  return result;
+}
+
+function isSimilarIssue(a, b) {
+  const coreA = extractCore(a.issue);
+  const coreB = extractCore(b.issue);
+  const sim = diceCoefficient(coreA, coreB);
+
+  // 1. 完全相同的问题（高度重合）
+  if (sim > 0.85) return true;
   
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${config.api_key}`
-    },
-    body: JSON.stringify(payload)
+  // 2. 风险等级相同且核心描述非常相似
+  if (sim > 0.75 && a.risk_level === b.risk_level) return true;
+  
+  // 3. 整改措施几乎一模一样
+  const corrSim = diceCoefficient(extractCore(a.correction), extractCore(b.correction));
+  if (corrSim > 0.90 && a.risk_level === b.risk_level) return true;
+
+  return false;
+}
+
+function extractCore(text) {
+  return (text || '')
+    .replace(/【[^】]+】/g, '')               
+    .replace(/[，。、！？；：.,!?;:\s]/g, '')   
+    .replace(/立即|必须|严禁|发现|存在|现场|现象|导致|建议|未见/g, '') 
+    .toLowerCase()
+    .trim();
+}
+
+function diceCoefficient(str1, str2) {
+  if (!str1 || !str2) return 0;
+  if (str1 === str2) return 1;
+  if (str1.length < 2 || str2.length < 2) return 0; 
+
+  let bg1 = new Map(), bg2 = new Map();
+  for (let i = 0; i < str1.length - 1; i++) {
+    const bg = str1.substring(i, i + 2);
+    bg1.set(bg, (bg1.get(bg) || 0) + 1);
+  }
+  for (let i = 0; i < str2.length - 1; i++) {
+    const bg = str2.substring(i, i + 2);
+    bg2.set(bg, (bg2.get(bg) || 0) + 1);
+  }
+
+  let intersection = 0;
+  for (let [bg, count] of bg1.entries()) {
+    if (bg2.has(bg)) {
+      intersection += Math.min(count, bg2.get(bg));
+    }
+  }
+  const total = (str1.length - 1) + (str2.length - 1);
+  return (2.0 * intersection) / total;
+}
+
+async function callAI(preset,system,user,b64,temp=0.3,maxTokens=2048){
+  const resp=await fetch(`${preset.url}/chat/completions`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.api_key}`},
+    body:JSON.stringify({
+      model:preset.model,temperature:temp,max_tokens:maxTokens,
+      messages:[
+        {role:'system',content:system},
+        {role:'user',content:[
+          {type:'image_url',image_url:{url:`data:image/jpeg;base64,${b64}`}},
+          {type:'text',text:user}
+        ]}
+      ]
+    })
   });
-  
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error(err.error?.message || `HTTP ${resp.status}`);
-  }
-  
-  const data = await resp.json();
-  return data.choices?.[0]?.message?.content || '';
+  if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${resp.status}`);}
+  const data=await resp.json();
+  return data.choices?.[0]?.message?.content||'';
+}
+function parseRoles(text){
+  try{const m=text.match(/\[.*?\]/s);if(m) return JSON.parse(m[0]);}catch(e){}
+  return[];
+}
+function parseIssues(text,role){
+  try{
+    const clean=text.replace(/```json|```/g,'').trim();
+    const s=clean.indexOf('['),e=clean.lastIndexOf(']')+1;
+    if(s!==-1&&e>0){
+      const arr=JSON.parse(clean.slice(s,e));
+      return arr.filter(x=>typeof x==='object'&&x.issue).map(x=>({...x,category:role}));
+    }
+  }catch(e){}
+  return[];
 }
 
-// =============================================
-// 响应解析
-// =============================================
-function parseRoles(text) {
-  try {
-    const json = text.match(/\[[\s\S]*\]/)?.[0] || '[]';
-    return JSON.parse(json);
-  } catch {
-    return [];
-  }
+function initZoom(){zoomLevel=1;zoomPanX=0;zoomPanY=0;applyZoom();}
+function applyZoom(){
+  const img=document.getElementById('detail-img');
+  if(!img) return;
+  img.style.transform=`translate(${zoomPanX}px,${zoomPanY}px) scale(${zoomLevel})`;
+  document.getElementById('zoom-label').textContent=Math.round(zoomLevel*100)+'%';
+}
+function zoomIn(){zoomLevel=Math.min(zoomLevel+0.25,4);zoomPanX=0;zoomPanY=0;applyZoom();}
+function zoomOut(){zoomLevel=Math.max(zoomLevel-0.25,0.5);if(zoomLevel<=1){zoomPanX=0;zoomPanY=0;}applyZoom();}
+
+function setupDetailZoom(){
+  const wrap=document.getElementById('detail-img-inner');
+  if(!wrap) return;
+  wrap.addEventListener('touchstart',e=>{
+    if(e.touches.length===2){
+      pinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    }else if(e.touches.length===1&&zoomLevel>1){
+      isPanning=true;panStartX=e.touches[0].clientX;panStartY=e.touches[0].clientY;panStartPX=zoomPanX;panStartPY=zoomPanY;
+    }
+  },{passive:true});
+  wrap.addEventListener('touchmove',e=>{
+    if(e.touches.length===2){
+      e.preventDefault();
+      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      zoomLevel=Math.min(Math.max(zoomLevel*(d/pinchDist),0.5),4);
+      pinchDist=d;applyZoom();
+    }else if(e.touches.length===1&&isPanning){
+      zoomPanX=panStartPX+(e.touches[0].clientX-panStartX);
+      zoomPanY=panStartPY+(e.touches[0].clientY-panStartY);
+      applyZoom();
+    }
+  },{passive:false});
+  wrap.addEventListener('touchend',()=>{isPanning=false;});
+  let lastTap=0;
+  wrap.addEventListener('touchend',e=>{
+    const now=Date.now();
+    if(now-lastTap<300){zoomLevel===1?zoomIn():initZoom();}
+    lastTap=now;
+  });
 }
 
-function parseIssues(text, role) {
-  try {
-    const json = text.match(/\[[\s\S]*\]/)?.[0] || '[]';
-    const arr = JSON.parse(json);
-    return arr.map(item => ({
-      risk_level: item.risk_level || '一般质量缺陷',
-      issue: item.issue ? `【${role}】${item.issue}` : '',
-      regulation: item.regulation || '',
-      correction: item.correction || '',
-      confidence: item.confidence || 0.5
-    }));
-  } catch {
-    return [];
-  }
+function openFullscreen(){
+  const src=document.getElementById('detail-img').src;
+  if(!src||src==='') return;
+  document.getElementById('fs-img').src=src;
+  fsZoomLevel=1;fsPanX=0;fsPanY=0;applyFsZoom();
+  document.getElementById('fullscreen-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  setupFsZoom();
+}
+function closeFullscreen(){
+  document.getElementById('fullscreen-overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+function applyFsZoom(){
+  const img=document.getElementById('fs-img');
+  if(!img) return;
+  img.style.transform=`translate(${fsPanX}px,${fsPanY}px) scale(${fsZoomLevel})`;
+  document.getElementById('fs-zoom-label').textContent=Math.round(fsZoomLevel*100)+'%';
+}
+function fsZoom(delta){fsZoomLevel=Math.min(Math.max(fsZoomLevel+delta,0.5),8);if(fsZoomLevel<=1){fsPanX=0;fsPanY=0;}applyFsZoom();}
+function fsReset(){fsZoomLevel=1;fsPanX=0;fsPanY=0;applyFsZoom();}
+function setupFsZoom(){
+  const wrap=document.getElementById('fs-img-wrap');
+  const nt=e=>{
+    if(e.touches.length===2) fsPinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    else if(e.touches.length===1){fsIsPanning=true;fsPanStartX=e.touches[0].clientX;fsPanStartY=e.touches[0].clientY;fsPanStartPX=fsPanX;fsPanStartPY=fsPanY;}
+  };
+  const mm=e=>{
+    if(e.touches.length===2){
+      e.preventDefault();
+      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      fsZoomLevel=Math.min(Math.max(fsZoomLevel*(d/fsPinchDist),0.5),8);
+      fsPinchDist=d;applyFsZoom();
+    }else if(e.touches.length===1&&fsIsPanning){
+      fsPanX=fsPanStartPX+(e.touches[0].clientX-fsPanStartX);
+      fsPanY=fsPanStartPY+(e.touches[0].clientY-fsPanStartY);
+      applyFsZoom();
+    }
+  };
+  wrap.ontouchstart=null;wrap.ontouchmove=null;wrap.ontouchend=null;
+  wrap.addEventListener('touchstart',nt,{passive:true});
+  wrap.addEventListener('touchmove',mm,{passive:false});
+  wrap.addEventListener('touchend',()=>{fsIsPanning=false;});
 }
 
-// =============================================
-// 详情页
-// =============================================
-function openDetail(task) {
-  currentDetailTask = task;
-  document.getElementById('detail-title').textContent = '  ' + task.name;
-  document.getElementById('detail-img').src = task.dataUrl || '';
+function openDetail(task){
+  currentDetailTask=task;
+  document.getElementById('detail-title').textContent='  '+task.name;
+  document.getElementById('detail-img').src=task.dataUrl||'';
   initZoom();
-  ['view-home', 'view-summary', 'view-settings'].forEach(id => 
-    document.getElementById(id).classList.remove('active'));
+  ['view-home','view-summary','view-settings'].forEach(id=>document.getElementById(id).classList.remove('active'));
   document.getElementById('view-detail').classList.add('active');
   renderDetailContent(task);
-  setTimeout(setupDetailZoom, 100);
+  setTimeout(setupDetailZoom,100);
 }
-
-function closeDetail() {
-  ['view-home', 'view-summary'].forEach(id => 
-    document.getElementById(id).classList.add('active'));
+function closeDetail(){
   document.getElementById('view-detail').classList.remove('active');
-  currentDetailTask = null;
+  currentDetailTask=null;
+  if(currentTab===0) document.getElementById('view-home').classList.add('active');
+  else if(currentTab===1){document.getElementById('view-summary').classList.add('active');renderSummary();}
+  else if(currentTab===3) document.getElementById('view-settings').classList.add('active');
 }
 
-function renderDetailContent(task) {
-  const el = document.getElementById('detail-content');
-  if (!el) return;
-  el.innerHTML = '';
-  
-  if (task.status === 'waiting') {
-    el.innerHTML = stateCard('⏳', '等待分析', '点击主页「▶ 开始分析」', '#9CA3AF');
-  } else if (task.status === 'analyzing') {
-    el.innerHTML = stateCard('🔄', '正在分析...', task.progress_msg || '', '#1A56DB');
-  } else if (task.status === 'error') {
-    el.innerHTML = stateCard('❌', '分析失败', task.error || '', '#E02424');
-  } else if (task.status === 'done') {
-    const data = task.data || [];
-    if (!data.length) {
-      el.innerHTML = stateCard('✅', '未发现问题', '该图片未检测到明显安全质量隐患', '#057A55');
-    } else {
-      const counts = {};
-      data.forEach(x => counts[x.risk_level] = (counts[x.risk_level] || 0) + 1);
-      
-      const badgeHTML = Object.entries(counts).map(([lvl, cnt]) => {
-        const st = RISK_STYLE[lvl] || RISK_STYLE['一般质量缺陷'];
-        return `<span class="stat-badge" style="background:${st.bg};color:${st.border};border-color:${st.border}">${st.icon} ${lvl.slice(0, 4)} ${cnt}个</span>`;
+function renderDetailContent(task){
+  const el=document.getElementById('detail-content');
+  if(!el) return;
+  el.innerHTML='';
+  if(task.status==='waiting') el.innerHTML=stateCard('⏳','等待分析','点击主页「▶ 开始分析」','#9CA3AF');
+  else if(task.status==='analyzing') el.innerHTML=stateCard('🔄','正在分析...',task.progress_msg||'','#1A56DB');
+  else if(task.status==='error') el.innerHTML=stateCard('❌','分析失败',task.error||'','#E02424');
+  else if(task.status==='done'){
+    const data=task.data||[];
+    if(!data.length){el.innerHTML=stateCard('✅','未发现问题','该图片未检测到明显安全质量隐患','#057A55');}
+    else{
+      const counts={};
+      data.forEach(x=>counts[x.risk_level]=(counts[x.risk_level]||0)+1);
+      const badgeHTML=Object.entries(counts).map(([lvl,cnt])=>{
+        const st=RISK_STYLE[lvl]||RISK_STYLE['一般质量缺陷'];
+        return`<span class="stat-badge" style="background:${st.bg};color:${st.border};border-color:${st.border}">${st.icon} ${lvl.slice(0,4)} ${cnt}个</span>`;
       }).join('');
-      
-      const stats = document.createElement('div');
-      stats.className = 'stats-card';
-      stats.innerHTML = `<div class="stats-title">共${data.length}个问题</div><div class="stats-badges">${badgeHTML}</div>`;
+      const stats=document.createElement('div');
+      stats.className='stats-card fade-in';
+      stats.innerHTML=`<div class="stats-title">共${data.length}个问题</div><div class="stats-badges">${badgeHTML}</div>`;
       el.appendChild(stats);
-      
-      [...data]
-        .sort((a, b) => (RISK_STYLE[a.risk_level]?.priority ?? 9) - (RISK_STYLE[b.risk_level]?.priority ?? 9))
-        .forEach((item, i) => el.appendChild(buildRiskCard(item, i + 1, task.id)));
+      [...data].sort((a,b)=>(RISK_STYLE[a.risk_level]?.priority??9)-(RISK_STYLE[b.risk_level]?.priority??9))
+        .forEach((item,i)=>el.appendChild(buildRiskCard(item,i+1,task.id)));
     }
   }
 }
 
-function stateCard(icon, title, sub, color) {
-  return `
-    <div class="state-card">
-      <div class="state-icon">${icon}</div>
-      <div class="state-title">${title}</div>
-      <div class="state-sub" style="color:${color}">${sub}</div>
-    </div>
-  `;
+function renderSummary(){
+  const el=document.getElementById('summary-content');
+  const allIssues=[];
+  tasks.forEach(t=>{if(t.status==='done'&&t.data) t.data.forEach(iss=>allIssues.push({...iss,_src:t.name,_tid:t.id}));});
+  if(!allIssues.length){
+    el.innerHTML=`<div class="state-card fade-in"><div class="state-icon">📊</div><div class="state-title">暂无分析结果</div><div class="state-sub">请先在主页添加并分析图片</div></div>`;
+    return;
+  }
+  el.innerHTML='';
+  const sorted=[...allIssues].sort((a,b)=>(RISK_STYLE[a.risk_level]?.priority??9)-(RISK_STYLE[b.risk_level]?.priority??9));
+  const counts={};
+  allIssues.forEach(x=>counts[x.risk_level]=(counts[x.risk_level]||0)+1);
+  const badgeHTML=['严重安全隐患','一般安全隐患','严重质量缺陷','一般质量缺陷'].filter(l=>counts[l]).map(l=>{
+    const st=RISK_STYLE[l];
+    return`<span class="stat-badge" style="background:${st.bg};color:${st.border};border-color:${st.border}">${st.icon} ${l.slice(0,4)} ${counts[l]}个</span>`;
+  }).join('');
+  const stats=document.createElement('div');
+  stats.className='stats-card fade-in';
+  stats.innerHTML=`<div class="stats-title">共发现${allIssues.length}个问题</div><div class="stats-badges">${badgeHTML}</div>`;
+  el.appendChild(stats);
+  sorted.forEach((item,i)=>{
+    const src=document.createElement('div');
+    src.className='src-label fade-in';src.textContent=`📷 ${item._src}`;el.appendChild(src);
+    el.appendChild(buildRiskCard(item,i+1,item._tid));
+  });
 }
 
-// =============================================
-// 风险卡片（V3.0 优化版）
-// =============================================
-function buildRiskCard(item, index, taskId) {
-  const st = RISK_STYLE[item.risk_level] || RISK_STYLE['一般质量缺陷'];
-  const issueShort = (item.issue || '').length > 80 
-    ? (item.issue || '').slice(0, 80) + '...' 
-    : (item.issue || '');
-  
-  const card = document.createElement('div');
-  card.className = 'risk-card';
-  card.style.cssText = `background:${st.bg};border-color:${st.border}`;
-  
-  // 多专家融合标签
-  let expertTagHTML = '';
-  if (item.experts && item.experts.length > 1) {
-    expertTagHTML = `<span class="multi-expert-tag">🔗 ${item.experts.join(' + ')}</span>`;
-  }
-  
-  card.innerHTML = `
+function buildRiskCard(item,index,taskId){
+  const st=RISK_STYLE[item.risk_level]||RISK_STYLE['一般质量缺陷'];
+  const issueShort=(item.issue||'').length>80?(item.issue||'').slice(0,80)+'...':(item.issue||'');
+  const card=document.createElement('div');
+  card.className='risk-card fade-in';
+  card.style.cssText=`background:${st.bg};border-color:${st.border}`;
+  card.innerHTML=`
     <div class="card-header">
       <div class="card-num" style="background:${st.border}">${index}</div>
       <div class="card-badge" style="background:${st.border}">${st.icon} ${item.risk_level}</div>
-      ${item.category ? `<div class="card-cat">${escHtml(item.category)}</div>` : ''}
-      ${expertTagHTML}
+      ${item.category?`<div class="card-cat">${escHtml(item.category)}</div>`:''}
       <div class="card-actions">
         <button class="card-btn btn-edit">编辑</button>
         <button class="card-btn btn-copy-card">复制</button>
@@ -1138,669 +1352,122 @@ function buildRiskCard(item, index, taskId) {
     </div>
     <div class="card-issue">${escHtml(issueShort)}</div>
     <div class="card-hint">💬 点击查看详情</div>
-    ${(item.regulation || item.correction) ? '<hr class="card-divider">' : ''}
+    ${item.regulation||item.correction?'<hr class="card-divider">':''}
     <div class="card-footer">
-      <div style="display:flex;gap:8px">
-        ${item.regulation ? '<span style="font-size:11px;color:var(--text-hint)">📋 有规范依据</span>' : ''}
-        ${item.correction ? '<span style="font-size:11px;color:var(--text-hint)">✅ 有整改措施</span>' : ''}
-      </div>
-      ${item.confidence ? `<span class="card-conf">置信度${Math.round(item.confidence * 100)}%</span>` : ''}
-    </div>
-  `;
-  
-  card._item = item;
-  card._taskId = taskId;
-  
-  card.querySelector('.btn-edit').onclick = e => {
-    e.stopPropagation();
-    openEdit(item, taskId);
-  };
-  card.querySelector('.btn-copy-card').onclick = e => {
-    e.stopPropagation();
-    copyIssue(item);
-  };
-  card.querySelector('.btn-delete').onclick = e => {
-    e.stopPropagation();
-    deleteIssue(item, taskId);
-  };
-  card.addEventListener('click', () => showIssueDetail(item));
-  
+      <div style="display:flex;gap:8px">${item.regulation?'<span style="font-size:11px;color:var(--text-hint)">📋 有规范依据</span>':''}${item.correction?'<span style="font-size:11px;color:var(--text-hint)">✅ 有整改措施</span>':''}</div>
+      ${item.confidence?`<span class="card-conf">置信度${Math.round(item.confidence*100)}%</span>`:''}
+    </div>`;
+  card._item=item;card._taskId=taskId;
+  card.querySelector('.btn-edit').onclick=e=>{e.stopPropagation();openEdit(item,taskId);};
+  card.querySelector('.btn-copy-card').onclick=e=>{e.stopPropagation();copyIssue(item);};
+  card.querySelector('.btn-delete').onclick=e=>{e.stopPropagation();deleteIssue(item,taskId);};
+  card.addEventListener('click',()=>showIssueDetail(item));
   return card;
 }
 
-// =============================================
-// 编辑/复制/删除
-// =============================================
-let editingItem = null;
-let editingTaskId = null;
-
-function openEdit(item, taskId) {
-  editingItem = item;
-  editingTaskId = taskId;
-  document.getElementById('edit-level').value = item.risk_level;
-  document.getElementById('edit-issue').value = item.issue || '';
-  document.getElementById('edit-regulation').value = item.regulation || '';
-  document.getElementById('edit-correction').value = item.correction || '';
-  document.getElementById('modal-edit').classList.add('open');
+function openEdit(item,taskId){
+  editingItem=item;editingTaskId=taskId;
+  document.getElementById('edit-level').value=item.risk_level||'一般质量缺陷';
+  document.getElementById('edit-issue').value=item.issue||'';
+  document.getElementById('edit-regulation').value=item.regulation||'';
+  document.getElementById('edit-correction').value=item.correction||'';
+  openModal('modal-edit');
 }
-
-function saveEdit() {
-  if (!editingItem) return;
-  editingItem.risk_level = document.getElementById('edit-level').value;
-  editingItem.issue = document.getElementById('edit-issue').value;
-  editingItem.regulation = document.getElementById('edit-regulation').value;
-  editingItem.correction = document.getElementById('edit-correction').value;
-  
-  const task = tasks.find(t => t.id === editingTaskId);
-  if (task) {
-    task.data = task.data.map(x => x === editingItem ? editingItem : x);
-    saveTasks();
-    renderDetailContent(task);
-  }
-  
+function saveEdit(){
+  if(!editingItem) return;
+  editingItem.risk_level=document.getElementById('edit-level').value;
+  editingItem.issue=document.getElementById('edit-issue').value.trim();
+  editingItem.regulation=document.getElementById('edit-regulation').value.trim();
+  editingItem.correction=document.getElementById('edit-correction').value.trim();
   closeModal('modal-edit');
-  showToast('✅ 已保存');
+  showToast('✓ 已保存');
+  if(currentDetailTask) renderDetailContent(currentDetailTask);
+  if(currentTab===1) renderSummary();
+}
+function deleteIssue(item,taskId){
+  if(!confirm(`确定删除？\n${(item.issue||'').slice(0,50)}`)) return;
+  const task=tasks.find(t=>t.id===taskId);
+  if(task?.data) task.data=task.data.filter(x=>x!==item);
+  showToast('✓ 已删除');
+  if(currentDetailTask?.id===taskId) renderDetailContent(currentDetailTask);
+  if(currentTab===1) renderSummary();
+}
+function copyIssue(item){
+  const text=`【${item.risk_level}】\n${item.issue}\n\n📋 规范依据：${item.regulation||'—'}\n✅ 整改措施：${item.correction||'—'}`;
+  copyText(text);showToast('✓ 已复制');
+}
+function showIssueDetail(item){
+  const st=RISK_STYLE[item.risk_level]||RISK_STYLE['一般质量缺陷'];
+  document.getElementById('modal-detail-content').innerHTML=`
+    <div style="background:${st.border};color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:700;margin-bottom:14px">${st.icon} ${item.risk_level}</div>
+    <div class="detail-section"><div class="detail-section-title">📝 问题描述</div><div class="detail-section-body">${escHtml(item.issue||'')}</div></div>
+    ${item.regulation?`<div class="detail-section"><div class="detail-section-title">📋 规范依据</div><div class="detail-section-body" style="color:var(--text-secondary)">${escHtml(item.regulation)}</div></div>`:''}
+    ${item.correction?`<div class="detail-section"><div class="detail-section-title">✅ 整改措施</div><div class="detail-section-body" style="color:var(--success)">${escHtml(item.correction)}</div></div>`:''}`;
+  openModal('modal-detail');
 }
 
-function copyIssue(item) {
-  const text = `${item.risk_level}\n${item.issue}\n${item.regulation ? '规范：' + item.regulation : ''}\n${item.correction ? '整改：' + item.correction : ''}`;
-  navigator.clipboard.writeText(text).then(() => {
-    showToast('✅ 已复制到剪贴板');
+function copyAll(){
+  const allIssues=[];
+  tasks.forEach(t=>{if(t.status==='done'&&t.data) t.data.forEach(iss=>allIssues.push({...iss,_src:t.name}));});
+  if(!allIssues.length){showToast('暂无可复制的问题');return;}
+  const sorted=[...allIssues].sort((a,b)=>(RISK_STYLE[a.risk_level]?.priority??9)-(RISK_STYLE[b.risk_level]?.priority??9));
+  const now=new Date().toLocaleString('zh-CN');
+  const lines=['🏗️ 质量安全检查问题清单',`检查时间：${now}`,`分析图片：${tasks.filter(t=>t.status==='done').length}张`,`发现问题：${allIssues.length}个`,'='.repeat(40),''];
+  sorted.forEach((iss,i)=>{
+    lines.push(`${i+1}. 【${iss.risk_level}】`,`   图片：${iss._src}`,`   [${iss.category}] ${iss.issue}`,`   📋 依据：${iss.regulation||'—'}`,`   ✅ 整改：${iss.correction||'—'}`,'');
+  });
+  copyText(lines.join('\n'));
+  showToast(`✅ 已复制${allIssues.length}个问题`);
+}
+
+function clearAll(){
+  if(!tasks.length) return;
+  if(!confirm('确定要清空所有图片吗？')) return;
+  tasks=[];
+  document.getElementById('task-list').innerHTML='';
+  updateCount();setStatus('就绪');showToast('✓ 队列已清空');
+}
+
+function stateCard(icon,title,sub,color){
+  return`<div class="state-card"><div class="state-icon">${icon}</div><div class="state-title" style="color:${color}">${escHtml(title)}</div><div class="state-sub">${escHtml(sub)}</div></div>`;
+}
+function setStatus(text){document.getElementById('status-bar').textContent=text;}
+function setProgress(val,visible){
+  const bar=document.getElementById('progress-bar');
+  bar.style.display=visible?'block':'none';
+  document.getElementById('progress-fill').style.width=val+'%';
+}
+
+let toastTimeout = null;
+function showToast(msg, dur = 2500) {
+  const t = document.getElementById('toast');
+  t.classList.remove('show');
+  if (toastTimeout) clearTimeout(toastTimeout);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      t.textContent = msg;
+      t.classList.add('show');
+      toastTimeout = setTimeout(() => {
+        t.classList.remove('show');
+      }, dur);
+    });
   });
 }
 
-function deleteIssue(item, taskId) {
-  const task = tasks.find(t => t.id === taskId);
-  if (task) {
-    task.data = task.data.filter(x => x !== item);
-    saveTasks();
-    renderDetailContent(task);
-    renderTaskList();
-    updateCountBadge();
-    showToast('✅ 已删除');
-  }
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+async function copyText(text){
+  try{await navigator.clipboard.writeText(text);}
+  catch(e){const el=document.createElement('textarea');el.value=text;el.style.position='fixed';el.style.opacity='0';document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);}
+}
+function escHtml(str){
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function showIssueDetail(item) {
-  const content = document.getElementById('modal-detail-content');
-  content.innerHTML = `
-    <div class="detail-section">
-      <div class="detail-section-title">🚨 风险等级</div>
-      <div class="detail-section-body">${item.risk_level}</div>
-    </div>
-    <div class="detail-section">
-      <div class="detail-section-title">📝 问题描述</div>
-      <div class="detail-section-body">${escHtml(item.issue)}</div>
-    </div>
-    ${item.regulation ? `
-    <div class="detail-section">
-      <div class="detail-section-title">📋 规范依据</div>
-      <div class="detail-section-body">${escHtml(item.regulation)}</div>
-    </div>
-    ` : ''}
-    ${item.correction ? `
-    <div class="detail-section">
-      <div class="detail-section-title">✅ 整改措施</div>
-      <div class="detail-section-body">${escHtml(item.correction)}</div>
-    </div>
-    ` : ''}
-    ${item.confidence ? `
-    <div class="detail-section">
-      <div class="detail-section-title">📊 AI 置信度</div>
-      <div class="detail-section-body">${Math.round(item.confidence * 100)}%</div>
-    </div>
-    ` : ''}
-  `;
-  document.getElementById('modal-detail').classList.add('open');
-}
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
-// =============================================
-// 清空/复制
-// =============================================
-function clearAll() {
-  if (confirm('确定清空所有图片和问题吗？')) {
-    tasks = [];
-    saveTasks();
-    renderTaskList();
-    updateCountBadge();
-    showToast('✅ 已清空');
-  }
-}
-
-function copyAll() {
-  const lines = [];
-  tasks.forEach((task, i) => {
-    if (task.data?.length) {
-      lines.push(`【图片${i + 1}】${task.name}`);
-      task.data.forEach((item, j) => {
-        lines.push(`${j + 1}. ${item.risk_level}: ${item.issue}`);
-        if (item.regulation) lines.push(`   规范：${item.regulation}`);
-        if (item.correction) lines.push(`   整改：${item.correction}`);
-      });
-      lines.push('');
-    }
-  });
-  
-  if (!lines.length) {
-    showToast('⚠️ 没有问题可复制');
-    return;
-  }
-  
-  navigator.clipboard.writeText(lines.join('\n')).then(() => {
-    showToast(`✅ 已复制${lines.length}行`);
-  });
-}
-
-// =============================================
-// 工具函数
-// =============================================
-function escHtml(text) {
-  if (!text) return '';
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\n/g, '<br>');
-}
-
-function setStatus(msg) {
-  document.getElementById('status-bar').textContent = msg;
-}
-
-function setProgress(percent, show) {
-  const bar = document.getElementById('progress-bar');
-  const fill = document.getElementById('progress-fill');
-  bar.style.display = show ? 'block' : 'none';
-  fill.style.width = percent + '%';
-}
-
-function switchTab(index) {
-  const views = ['view-home', 'view-summary', 'view-detail', 'view-settings'];
-  const navs = ['nav-home', 'nav-summary', 'nav-add', 'nav-settings'];
-  
-  views.forEach((id, i) => {
-    const el = document.getElementById(id);
-    if (i === index && id !== 'view-detail') el.classList.add('active');
-    else el.classList.remove('active');
-  });
-  
-  navs.forEach((id, i) => {
-    const el = document.getElementById(id);
-    if (i === index) el.classList.add('active');
-    else el.classList.remove('active');
-  });
-}
-
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-}
-
-// =============================================
-// 图片缩放
-// =============================================
-function initZoom() {
-  zoomScale = 1;
-  updateZoomLabel();
-}
-
-function setupDetailZoom() {
-  const img = document.getElementById('detail-img');
-  const wrap = document.getElementById('detail-image-wrap');
-  if (!img || !wrap) return;
-  
-  let scale = 1;
-  let panning = false;
-  let pointX = 0, pointY = 0;
-  let startX = 0, startY = 0;
-  
-  function updateTransform() {
-    img.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
-    document.getElementById('zoom-label').textContent = Math.round(scale * 100) + '%';
-  }
-  
-  function resetZoom() {
-    scale = 1;
-    pointX = 0;
-    pointY = 0;
-    updateTransform();
-  }
-  
-  // 双击重置
-  wrap.addEventListener('dblclick', resetZoom);
-  
-  // 触摸缩放
-  let initialDistance = 0;
-  let initialScale = 1;
-  
-  wrap.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 2) {
-      initialDistance = Math.hypot(
-        e.touches[0].pageX - e.touches[1].pageX,
-        e.touches[0].pageY - e.touches[1].pageY
-      );
-      initialScale = scale;
-    } else if (e.touches.length === 1) {
-      panning = true;
-      startX = e.touches[0].pageX - pointX;
-      startY = e.touches[0].pageY - pointY;
-    }
-  });
-  
-  wrap.addEventListener('touchmove', (e) => {
-    if (e.touches.length === 2) {
-      e.preventDefault();
-      const distance = Math.hypot(
-        e.touches[0].pageX - e.touches[1].pageX,
-        e.touches[0].pageY - e.touches[1].pageY
-      );
-      scale = Math.max(1, Math.min(initialScale * (distance / initialDistance), 4));
-      updateTransform();
-    } else if (panning) {
-      e.preventDefault();
-      pointX = e.touches[0].pageX - startX;
-      pointY = e.touches[0].pageY - startY;
-      updateTransform();
-    }
-  });
-  
-  wrap.addEventListener('touchend', () => {
-    panning = false;
-  });
-  
-  window.zoomIn = () => { scale = Math.min(scale * 1.2, 4); updateTransform(); };
-  window.zoomOut = () => { scale = Math.max(scale / 1.2, 1); updateTransform(); };
-}
-
-function updateZoomLabel() {
-  document.getElementById('zoom-label').textContent = '100%';
-}
-
-// =============================================
-// 全屏查看
-// =============================================
-function openFullscreen() {
-  const overlay = document.getElementById('fullscreen-overlay');
-  const img = document.getElementById('fs-img');
-  img.src = document.getElementById('detail-img').src;
-  overlay.classList.add('open');
-  fullscreenZoom = 1;
-  updateFsZoomLabel();
-}
-
-function closeFullscreen() {
-  document.getElementById('fullscreen-overlay').classList.remove('open');
-}
-
-function fsZoom(delta) {
-  fullscreenZoom = Math.max(1, Math.min(fullscreenZoom + delta, 4));
-  document.getElementById('fs-img').style.transform = `scale(${fullscreenZoom})`;
-  updateFsZoomLabel();
-}
-
-function fsReset() {
-  fullscreenZoom = 1;
-  document.getElementById('fs-img').style.transform = 'scale(1)';
-  updateFsZoomLabel();
-}
-
-function updateFsZoomLabel() {
-  document.getElementById('fs-zoom-label').textContent = Math.round(fullscreenZoom * 100) + '%';
-}
-
-// =============================================
-// 知识库（14 个专家）- 精简版
-// =============================================
-const REGULATION_DB = {
-  '安全': {
-    role_desc: '注册安全工程师 | 30 年施工现场安全管理经验',
-    scope: '通用安全防护、个人防护用品、临边洞口、脚手架、高处作业',
-    critical_hazards: [
-      '【致命】高处作业 (2m 以上) 不系安全带或低挂高用',
-      '【致命】临边、洞口防护缺失或不牢固',
-      '安全帽未系下颌带或佩戴裂缝帽',
-      '脚手架未满铺脚手板或存在探头板',
-      '特种设备作业时，无安全管理人员指挥或监督',
-      '安全网破损、老化、未张挂'
-    ],
-    checklist: [
-      '【一眼识别】安全帽：未系下颌带、帽壳裂纹立即报告',
-      '【一眼识别】安全带：2m 以上无安全带或低挂高用立即报告',
-      '【一眼识别】临边防护：护栏不足 1.2m 立即报告',
-      '【一眼识别】洞口防护：无盖板或盖板不固定立即报告'
-    ],
-    norms: `JGJ 59-2011《建筑施工安全检查标准》
-第 3.2.5 条 进入施工现场必须正确佩戴安全帽，系好下颌带。
-第 5.1.1 条 高处作业 (≥2m) 必须系安全带，高挂低用，挂点牢固。`,
-    anti_hallucination: '管理人员在安全通道内检查可短时摘帽；地面作业不强制系安全带。'
-  },
-  
-  '消防': {
-    role_desc: '注册消防工程师 | 30 年施工现场消防管理经验',
-    scope: '气瓶管理、动火作业、消防通道、灭火器、易燃物存放',
-    critical_hazards: [
-      '氧气瓶与乙炔瓶混放或间距不足 5m',
-      '气瓶距明火作业点不足 10m',
-      '动火作业无监护人、无灭火器材'
-    ],
-    checklist: [
-      '【一眼识别】气瓶间距：氧气乙炔瓶距离小于 5m 立即报告',
-      '【一眼识别】动火监护：无监护人、无灭火器立即报告',
-      '【一眼识别】消防通道：被材料、车辆堵塞立即报告'
-    ],
-    norms: `GB 50720-2011《建设工程施工现场消防安全技术规范》
-第 5.3.7 条 氧气瓶与乙炔瓶工作间距≥5m，与明火距离≥10m。`,
-    anti_hallucination: '空瓶待运可横放；食堂用火有专人管理不是违规。'
-  },
-  
-  '机械': {
-    role_desc: '起重机械专家 | 30 年塔吊施工升降机安拆经验',
-    scope: '塔吊、施工升降机、吊篮、汽车吊等机械设备',
-    critical_hazards: [
-      '【致命】使用挖掘机、装载机等非起重机械进行吊装作业',
-      '【致命】塔吊力矩限制器、起重量限制器失效',
-      '【致命】施工升降机防坠安全器超期或失效',
-      '钢丝绳一个节距内断丝超过总丝数 10%'
-    ],
-    checklist: [
-      '【一眼识别】非起重机械吊物：挖掘机、装载机吊物立即报告（致命违章）',
-      '【一眼识别】限位器：线头短接、拆除立即报告',
-      '【一眼识别】钢丝绳：断丝、断股、死弯立即报告'
-    ],
-    norms: `GB 5144-2006《塔式起重机安全规程》
-第 6.1.1 条 塔吊必须装设力矩限制器、起重量限制器。
-JGJ 33-2012《建筑机械使用安全技术规程》
-第 4.1.14 条 严禁使用挖掘机、装载机进行吊装作业。`,
-    anti_hallucination: '停工状态吊钩无荷载正常；设备表面轻微锈迹不是缺陷。'
-  },
-  
-  '土建': {
-    role_desc: '土建总工程师 | 30 年房建与工业建筑施工经验',
-    scope: '砌体工程、抹灰、装饰、门窗、屋面、楼地面',
-    critical_hazards: [
-      '砌体墙体垂直度严重超差，影响结构安全',
-      '砌筑砂浆强度不足或和易性差（干砌）',
-      '填充墙与主体结构未设置拉结筋或拉结筋规格不足'
-    ],
-    checklist: [
-      '【一眼识别】砌体垂直度：用 2m 靠尺检查，偏差超 8mm 立即报告',
-      '【一眼识别】砂浆饱满度：灰缝饱满度不足 80% 立即报告',
-      '【一眼识别】拉结筋：未设置或长度不足立即报告'
-    ],
-    norms: `GB 50203-2011《砌体结构工程施工质量验收规范》
-第 5.2.3 条 砖砌体灰缝砂浆应饱满，水平灰缝饱满度不得低于 80%。`,
-    anti_hallucination: '临时施工洞口不是缺陷；表面轻微色差不是问题。'
-  },
-  
-  '机电': {
-    role_desc: '机电安装专家 | 30 年机电管线综合排布经验',
-    scope: '综合管线排布、支吊架、标识、设备基础',
-    critical_hazards: [
-      '管线综合排布混乱，净空高度不足',
-      '支吊架间距过大或固定不牢固',
-      '管道标识缺失或错误'
-    ],
-    checklist: [
-      '【一眼识别】管线排布：交叉混乱、无间距立即报告',
-      '【一眼识别】支吊架：缺失、松动、间距超标立即报告',
-      '【一眼识别】标识：管道流向、介质标识缺失立即报告'
-    ],
-    norms: `GB 50242-2002《建筑给水排水及采暖工程施工质量验收规范》
-第 3.3.7 条 管道支吊架间距应符合规范要求。`,
-    anti_hallucination: '临时支架不是缺陷；施工过程中的未保温不是问题。'
-  },
-  
-  '电气': {
-    role_desc: '电气工程师 | 30 年施工现场临时用电管理经验',
-    scope: '临时用电系统、配电箱、电缆敷设、接地保护',
-    critical_hazards: [
-      '【致命】三级配电两级保护缺失',
-      '【致命】一闸多机或私拉乱接',
-      '电缆拖地浸水或破损裸露'
-    ],
-    checklist: [
-      '【一眼识别】配电箱：门敞开、无锁、无警示标识立即报告',
-      '【一眼识别】电缆：拖地、浸水、破损立即报告',
-      '【一眼识别】接地：设备无接地或接地不规范立即报告'
-    ],
-    norms: `JGJ 46-2005《施工现场临时用电安全技术规范》
-第 8.1.3 条 每台用电设备必须有各自专用的开关箱，严禁用同一个开关箱直接控制 2 台及 2 台以上用电设备。`,
-    anti_hallucination: '停电状态的配电箱不是问题；临时照明线路规范架设不是违规。'
-  },
-  
-  '环保': {
-    role_desc: '环保工程师 | 30 年施工现场环境管理经验',
-    scope: '扬尘控制、噪声污染、废水处理、固废管理',
-    critical_hazards: [
-      '施工现场无扬尘控制措施',
-      '噪声超标扰民',
-      '污水直排或固废乱倒'
-    ],
-    checklist: [
-      '【一眼识别】扬尘：裸土未覆盖、无喷淋立即报告',
-      '【一眼识别】噪声：夜间施工无公示立即报告',
-      '【一眼识别】废水：沉淀池缺失或污水直排立即报告'
-    ],
-    norms: `GB 12523-2011《建筑施工场界环境噪声排放标准》
-第 4.1 条 建筑施工场界环境噪声排放限值：昼间 70dB，夜间 55dB。`,
-    anti_hallucination: '正常施工声音不是噪声超标；少量建筑垃圾临时堆放不是乱倒。'
-  },
-  
-  '水利': {
-    role_desc: '水利工程师 | 30 年水利水电工程施工经验',
-    scope: '围堰、大坝填筑、混凝土面板、溢洪道',
-    critical_hazards: [
-      '围堰渗漏或稳定性不足',
-      '大坝填筑压实度不足',
-      '混凝土面板裂缝或渗水'
-    ],
-    checklist: [
-      '【一眼识别】围堰：渗漏、变形立即报告',
-      '【一眼识别】填筑：分层厚度超标立即报告',
-      '【一眼识别】面板：裂缝宽度超 0.2mm 立即报告'
-    ],
-    norms: `SL 260-2014《水利水电工程施工质量检验与评定规程》
-第 4.3.2 条 混凝土面板裂缝宽度不得大于 0.2mm。`,
-    anti_hallucination: '施工缝不是裂缝；正常收缩缝不是缺陷。'
-  },
-  
-  '结构': {
-    role_desc: '结构工程师 | 30 年混凝土结构施工经验',
-    scope: '模板支撑体系、钢筋绑扎、混凝土浇筑',
-    critical_hazards: [
-      '【致命】模板支撑体系立杆间距超标或水平杆缺失',
-      '钢筋规格、数量、位置严重偏差',
-      '混凝土蜂窝、麻面、露筋'
-    ],
-    checklist: [
-      '【一眼识别】模板支撑：立杆悬空、水平杆缺失立即报告',
-      '【一眼识别】钢筋：规格错误、数量不足立即报告',
-      '【一眼识别】混凝土：蜂窝、露筋立即报告'
-    ],
-    norms: `GB 50204-2015《混凝土结构工程施工质量验收规范》
-第 5.3.1 条 钢筋安装时，受力钢筋的牌号、规格、数量必须符合设计要求。`,
-    anti_hallucination: '模板表面轻微污渍不是缺陷；混凝土色差不是问题。'
-  },
-  
-  '基坑': {
-    role_desc: '岩土工程师 | 30 年基坑工程经验',
-    scope: '基坑开挖、围护结构、锚杆土钉、降排水',
-    critical_hazards: [
-      '【致命】基坑边坡出现裂缝或渗水',
-      '支护结构变形超标',
-      '坑底隆起或管涌'
-    ],
-    checklist: [
-      '【一眼识别】边坡：裂缝、渗水、掉块立即报告',
-      '【一眼识别】支护：变形、倾斜立即报告',
-      '【一眼识别】降水：坑底积水、管涌立即报告'
-    ],
-    norms: `JGJ 120-2012《建筑基坑支护技术规程》
-第 4.1.3 条 基坑开挖过程中，边坡坡度应符合设计要求。`,
-    anti_hallucination: '施工通道不是裂缝；少量渗水不是管涌。'
-  },
-  
-  '边坡': {
-    role_desc: '岩土工程师 | 30 年边坡治理经验',
-    scope: '岩质/土质边坡、挡土墙、锚索、格构梁',
-    critical_hazards: [
-      '边坡裂缝、掉块、滑移迹象',
-      '锚索预应力不足或失效',
-      '挡土墙倾斜、开裂'
-    ],
-    checklist: [
-      '【一眼识别】边坡：裂缝、掉块立即报告',
-      '【一眼识别】锚索：锚头锈蚀、松动立即报告',
-      '【一眼识别】挡墙：倾斜、裂缝立即报告'
-    ],
-    norms: `GB 50330-2013《建筑边坡工程技术规范》
-第 3.3.6 条 边坡支护结构应进行变形监测。`,
-    anti_hallucination: '植被覆盖不是问题；表面风化不是缺陷。'
-  },
-  
-  '隧洞': {
-    role_desc: '隧道工程师 | 30 年隧道施工经验',
-    scope: '隧道开挖、初期支护、二次衬砌、防水',
-    critical_hazards: [
-      '【致命】开挖面坍塌或掉块',
-      '初期支护变形、开裂',
-      '二次衬砌渗漏水'
-    ],
-    checklist: [
-      '【一眼识别】开挖面：掉块、渗水立即报告',
-      '【一眼识别】初支：钢拱架变形、喷射混凝土开裂立即报告',
-      '【一眼识别】二衬：渗漏水、裂缝立即报告'
-    ],
-    norms: `GB 50086-2015《岩土锚杆与喷射混凝土支护工程技术规范》
-第 8.1.4 条 喷射混凝土支护应及时封闭开挖面。`,
-    anti_hallucination: '施工缝不是裂缝；少量渗水不是缺陷。'
-  },
-  
-  '管道': {
-    role_desc: '管道工程师 | 30 年工艺管道施工经验',
-    scope: '工艺管道、压力管道、阀门法兰、支吊架',
-    critical_hazards: [
-      '管道焊接质量缺陷',
-      '法兰连接泄漏',
-      '支吊架失效'
-    ],
-    checklist: [
-      '【一眼识别】焊接：焊缝表面缺陷立即报告',
-      '【一眼识别】法兰：螺栓缺失、泄漏立即报告',
-      '【一眼识别】支吊架：脱落、变形立即报告'
-    ],
-    norms: `GB 50235-2010《工业金属管道工程施工规范》
-第 7.4.2 条 法兰连接应保持平行，螺栓紧固力应均匀。`,
-    anti_hallucination: '管道表面轻微锈迹不是缺陷；施工过程中的未保温不是问题。'
-  },
-  
-  '给排水': {
-    role_desc: '给排水工程师 | 30 年给排水管道施工经验',
-    scope: '给水管道、排水管道、消防给水、检查井',
-    critical_hazards: [
-      '管道接口渗漏',
-      '管道坡度反向或倒坡',
-      '检查井盖板破损或缺失'
-    ],
-    checklist: [
-      '【一眼识别】接口：渗漏、错位立即报告',
-      '【一眼识别】坡度：倒坡、积水立即报告',
-      '【一眼识别】井盖：破损、缺失立即报告'
-    ],
-    norms: `GB 50242-2002《建筑给水排水及采暖工程施工质量验收规范》
-第 4.2.3 条 排水管道应按设计要求设置坡度，严禁倒坡。`,
-    anti_hallucination: '管道表面凝露不是渗漏；临时封堵不是缺陷。'
-  }
-};
-
-// =============================================
-// 路由分诊 Prompt
-// =============================================
-const ROUTER_PROMPT = [
-  {
-    role: 'system',
-    content: `你是施工现场智能分诊系统。
-你的任务：分析用户提供的施工图片，判断涉及哪些专业领域，并选派相应的专家进行分析。
-
-可选专家列表：
-- 安全：通用安全防护、个人防护用品、临边洞口、脚手架
-- 消防：气瓶管理、动火作业、消防通道、灭火器
-- 机械：塔吊、施工升降机、吊篮、汽车吊
-- 土建：砌体工程、抹灰、装饰、门窗、屋面
-- 机电：综合管线排布、支吊架、标识
-- 电气：临时用电系统、配电箱、电缆敷设
-- 结构：模板支撑体系、钢筋绑扎、混凝土浇筑
-- 环保：扬尘控制、噪声污染、废水处理
-- 水利：围堰、大坝填筑、混凝土面板
-- 基坑：基坑开挖、围护结构、锚杆土钉
-- 边坡：岩质/土质边坡、挡土墙、锚索
-- 隧洞：隧道开挖、初期支护、二次衬砌
-- 管道：工艺管道、压力管道、阀门法兰
-- 给排水：给水管道、排水管道、检查井
-
-选派规则：
-1. 根据图片内容，选择 3-6 名最相关的专家
-2. 必须包含"安全"专家（除非图片完全不涉及施工）
-3. 输出 JSON 数组格式：["安全", "土建", "机械"]
-
-只输出 JSON 数组，不要其他内容。`
-  }
-];
-
-// =============================================
-// 构建专家 Prompt
-// =============================================
-function buildExpertPrompt(role, kb, promptMode, otherRoles) {
-  const modeConfig = {
-    'dual': '请同时检查安全 + 质量两方面问题',
-    'safety': '请重点检查安全隐患',
-    'quality': '请重点检查质量缺陷',
-    'critical': '请筛查可能引发事故的高危风险'
-  };
-  
-  return [
-    {
-      role: 'system',
-      content: `你是${kb.role_desc}。
-专业范畴：${kb.scope}
-
-【关键风险清单】（必须优先检查）
-${kb.critical_hazards.map(h => `• ${h}`).join('\n')}
-
-【检查清单】
-${kb.checklist.map(c => `• ${c}`).join('\n')}
-
-【必须报告的情况】
-${kb.must_report_if?.map(m => `• ${m}`).join('\n') || '无特殊要求'}
-
-【规范依据】
-${kb.norms}
-
-【防幻觉声明】
-${kb.anti_hallucination || '请基于图片实际内容判断，不要臆测。'}
-
-【重要】其他专家也在分析同一图片：${otherRoles.join('、')}。
-如果发现相同问题，请正常输出，系统会自动融合。`
-    },
-    {
-      role: 'user',
-      content: `${modeConfig[promptMode] || modeConfig['dual']}
-
-输出格式（JSON 数组）：
-[
-  {
-    "risk_level": "严重安全隐患 | 一般安全隐患 | 严重质量缺陷 | 一般质量缺陷",
-    "issue": "问题描述（简洁明确，50 字以内）",
-    "regulation": "规范依据",
-    "correction": "整改措施",
-    "confidence": 0.0~1.0 的置信度
-  }
-]
-
-如果没有发现问题，输出空数组 []。`
-    }
-  ];
-}
-
+loadConfig();
+updateCount();
 </script>
 </body>
 </html>
