@@ -236,7 +236,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
   <!-- HOME VIEW -->
   <div class="view active" id="view-home">
     <div class="topbar">
-      <h1>🏗️ 安全质量检查AI</h1>
+      <h1>🏗️ 安全质量检查助手V2.1</h1>
       <span class="count-badge" id="count-badge">0/20</span>
     </div>
     <div class="scene-bar">
@@ -311,8 +311,8 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
             <span class="settings-icon">🤖</span>
             <span class="settings-label">模型</span>
             <select class="settings-select" id="s-provider">
-              <option value="qwen2.5-vl-72b">阿里百炼 Qwen2.5-VL (推荐)</option>
-              <option value="qwen-vl-max">阿里百炼 Qwen-VL-Max</option>
+              <option value="qwen2.5-vl-72b">阿里百炼 Qwen2.5-VL </option>
+              <option value="qwen-vl-max">阿里百炼 Qwen-VL-Max (推荐)</option>
               <option value="siliconflow">硅基流动 Qwen2-VL</option>
             </select>
           </div>
@@ -453,7 +453,8 @@ const REGULATION_DB = {
       '脚手架未满铺脚手板或存在探头板',
       '安全网破损、老化、未张挂',
       '交叉作业无隔离防护措施',
-      '起重机械作业区无警戒、无监护人'
+      '起重机械作业区无警戒、无监护人',
+      '特种作业区无警戒、无监护人'
     ],
     checklist:[
       '【一眼识别】安全帽：未系下颌带、帽壳裂纹立即报告',
@@ -1053,8 +1054,6 @@ ${kb.anti_hallucination}
 // 生成各专家的去重排除提示
 function getExclusionHints(role, otherRoles) {
   const hints = {
-    '安全':   '个人防护用品(安全帽/安全带)的通用安全问题由本专家负责；电气专业违规由电气专家负责；机械设备问题由机械专家负责。',
-    '消防':   '气瓶、动火、灭火器、消防水源由本专家负责；电气线路火灾隐患由电气专家负责。',
     '机械':   '起重机械、挖掘机、升降机由本专家负责；吊装作业的安全防护由安全专家补充；电气供电由电气专家负责。',
     '土建':   '砌体、抹灰、门窗由本专家负责；混凝土结构主体由结构专家负责；防水由给排水专家负责。',
     '机电':   '综合管线排布和支吊架由本专家负责；单一电气系统由电气专家负责；单一管道由管道或给排水专家负责。',
@@ -1068,13 +1067,13 @@ function getExclusionHints(role, otherRoles) {
     '隧洞':   '洞内支护、衬砌、通风由本专家负责；洞口边坡由边坡专家负责；洞内机械由机械专家负责。',
     '管道':   '工艺管道、阀门、法兰由本专家负责；建筑给排水由给排水专家负责；暖通风管由机电专家负责。'
   };
-  return hints[role] || '只报告本专业范畴内的问题。';
+  return hints[role] || '重点报告本专业范畴内的问题。';
 }
 
 // =============================================
 // 状态
 // =============================================
-let tasks = [], config = {api_key:'', provider:'qwen2.5-vl-72b'};
+let tasks = [], config = {api_key:'', provider:'qwen-vl-max'};
 let currentTab = 0, currentDetailTask = null;
 let editingItem = null, editingTaskId = null;
 let totalAnalyzing = 0, doneAnalyzing = 0;
@@ -1085,7 +1084,7 @@ let totalAnalyzing = 0, doneAnalyzing = 0;
 function loadConfig() {
   try{const s=localStorage.getItem('sc_cfg');if(s) config=JSON.parse(s);}catch(e){}
   document.getElementById('s-apikey').value=config.api_key||'';
-  document.getElementById('s-provider').value=config.provider||'qwen2.5-vl-72b';
+  document.getElementById('s-provider').value=config.provider||'qwen-vl-max';
 }
 function saveSettings() {
   config.api_key=document.getElementById('s-apikey').value.trim();
