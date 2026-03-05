@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="安全质检">
+<meta name="theme-color" content="#1A56DB">
+<link rel="manifest" href="./manifest.json">
+<title>建设工程质量安全检查助手</title>
+<style>
+:root {
+  --primary: #1A56DB;
+  --primary-light: #EBF0FF;
+  --primary-dark: #1447b8;
+  --danger: #E02424;
+  --danger-light: #FDE8E8;
+  --success: #057A55;
+  --success-light: #DEF7EC;
+  --warning: #D03801;
+  --warning-light: #FEF3C7;
+  --caution: #B45309;
+  --caution-light: #FFFBEB;
+  --info-light: #E1EFFE;
+  --bg: #F3F4F6;
+  --surface: #FFFFFF;
+  --surface2: #F9FAFB;
+  --text-primary: #111928;
+  --text-secondary: #6B7280;
+  --text-hint: #9CA3AF;
+  --border: #E5E7EB;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%; width: 100%;
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+  background: var(--bg);
+  overflow: hidden;
+  color: var(--text-primary);
+}
+
+#app {
+  display: flex; flex-direction: column;
+  height: 100%; max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  background: var(--bg);
+  box-shadow: 0 0 40px rgba(0,0,0,0.15);
+}
+
+/* ===== VIEWS ===== */
+.view { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+.view.active { display: flex; }
+
+/* ===== TOP BAR ===== */
+.topbar {
+  background: var(--primary);
+  padding: calc(var(--safe-top) + 12px) 16px 12px;
+  display: flex; align-items: center; gap: 10px;
+  flex-shrink: 0; min-height: 56px;
+  position: relative; z-index: 10;
+}
+.topbar h1 { color: #fff; font-size: 17px; font-weight: 700; flex: 1; }
+.topbar .count-badge {
+  background: rgba(255,255,255,0.2); color: #fff;
+  padding: 4px 12px; border-radius: 10px;
+  font-size: 13px; font-weight: 600;
+}
+.btn-back {
+  background: rgba(255,255,255,0.2); color: #fff;
+  border: none; border-radius: 8px;
+  padding: 8px 14px; font-size: 15px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.topbar-title { color: #fff; font-size: 15px; font-weight: 600; flex: 1; }
+
+/* ===== SCROLL AREA ===== */
+.scroll-area { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+.scroll-area::-webkit-scrollbar { width: 0; }
+
+/* ===== SCENE BAR ===== */
+.scene-bar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 8px 14px; display: flex; align-items: center; gap: 10px;
+  flex-shrink: 0;
+}
+.scene-bar label { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+.scene-bar select {
+  flex: 1; height: 38px; border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 0 10px;
+  font-size: 13px; background: var(--bg); color: var(--text-primary);
+  outline: none; cursor: pointer;
+}
+
+/* ===== BOTTOM BAR ===== */
+.bottom-bar {
+  background: var(--surface); border-top: 1px solid var(--border);
+  padding: 10px 12px calc(var(--safe-bottom) + 10px);
+  display: flex; gap: 10px; flex-shrink: 0;
+}
+.bottom-bar button {
+  height: 46px; border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.bottom-bar button:active { opacity: 0.85; transform: scale(0.97); }
+.btn-clear { background: var(--surface2); color: var(--text-secondary); border: 1.5px solid var(--border) !important; min-width: 80px; }
+.btn-copy-all { background: var(--success-light); color: var(--success); border: 1.5px solid var(--success) !important; min-width: 110px; }
+.btn-analyze { background: var(--primary); color: #fff; flex: 1; font-size: 15px; font-weight: 700; box-shadow: 0 4px 14px rgba(26,86,219,0.4); }
+.btn-copy-report { background: var(--primary); color: #fff; flex: 1; font-size: 15px; font-weight: 700; }
+
+/* ===== STATUS BAR ===== */
+.status-bar { padding: 3px 14px 4px; font-size: 12px; color: var(--text-secondary); flex-shrink: 0; }
+.progress-bar { height: 4px; background: var(--border); flex-shrink: 0; display: none; }
+.progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+
+/* ===== NAV BAR ===== */
+.navbar {
+  background: var(--surface); border-top: 1px solid var(--border);
+  display: flex; padding-bottom: var(--safe-bottom);
+  flex-shrink: 0;
+}
+.nav-btn {
+  flex: 1; border: none; background: transparent;
+  padding: 8px 4px 6px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  font-size: 10px; color: var(--text-hint); font-weight: 500;
+  transition: color 0.15s;
+}
+.nav-btn.active { color: var(--primary); font-weight: 700; }
+.nav-btn .nav-icon { font-size: 22px; line-height: 1; }
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 12px; flex: 1; padding: 40px 20px;
+}
+.empty-state .big-icon { font-size: 64px; }
+.empty-state h2 { font-size: 19px; font-weight: 700; color: var(--text-primary); }
+.empty-state p { font-size: 14px; color: var(--text-secondary); text-align: center; }
+
+/* ===== TASK LIST ===== */
+.task-list { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.task-row {
+  background: var(--surface); border-radius: 12px; border: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px 10px 10px; cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.task-row:active { transform: scale(0.98); }
+.task-thumb {
+  width: 50px; height: 50px; border-radius: 8px;
+  object-fit: cover; border: 1px solid var(--border);
+  flex-shrink: 0; background: var(--bg);
+}
+.task-thumb-placeholder {
+  width: 50px; height: 50px; border-radius: 8px;
+  background: var(--bg); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.task-info { flex: 1; min-width: 0; }
+.task-name { font-size: 14px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.task-status { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
+.task-dot { font-size: 20px; flex-shrink: 0; }
+.task-arrow { font-size: 20px; color: var(--text-hint); flex-shrink: 0; }
+
+/* ===== RISK CARD ===== */
+.risk-card {
+  border-radius: 14px; border: 1.5px solid; padding: 12px 14px;
+  cursor: pointer; transition: transform 0.1s;
+}
+.risk-card:active { transform: scale(0.98); }
+.card-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.card-num {
+  width: 24px; height: 24px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.card-badge {
+  padding: 3px 9px; border-radius: 7px;
+  font-size: 12px; font-weight: 700; color: #fff;
+}
+.card-cat {
+  padding: 3px 9px; border-radius: 7px;
+  font-size: 11px; color: var(--text-secondary);
+  background: var(--surface); border: 1px solid var(--border);
+}
+.card-actions { margin-left: auto; display: flex; gap: 6px; }
+.card-btn {
+  padding: 4px 10px; border-radius: 6px; border: none;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.card-btn:active { opacity: 0.7; }
+.btn-edit { background: var(--info-light); color: var(--primary); }
+.btn-copy-card { background: var(--primary-light); color: var(--primary); }
+.btn-delete { background: var(--danger-light); color: var(--danger); }
+.card-issue { font-size: 14px; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin-bottom: 6px; }
+.card-hint { font-size: 11px; color: var(--text-hint); font-style: italic; }
+.card-divider { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+.card-footer { display: flex; justify-content: space-between; align-items: center; }
+.card-icons { display: flex; gap: 8px; }
+.card-conf { font-size: 11px; color: var(--text-hint); }
+
+/* ===== IMAGE PREVIEW ===== */
+.detail-image {
+  background: #1F2937; height: 240px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.detail-image img { max-height: 240px; max-width: 100%; object-fit: contain; }
+
+/* ===== SUMMARY STATS ===== */
+.stats-card {
+  background: var(--surface); border-radius: 12px; border: 1px solid var(--border);
+  padding: 14px; margin-bottom: 10px;
+}
+.stats-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.stats-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.stat-badge {
+  padding: 5px 10px; border-radius: 8px;
+  font-size: 12px; font-weight: 600; border: 1px solid;
+}
+.src-label { font-size: 11px; color: var(--text-hint); padding: 2px 4px; }
+
+/* ===== STATE CARDS ===== */
+.state-card {
+  background: var(--surface); border-radius: 14px; border: 1px solid var(--border);
+  padding: 40px 20px; display: flex; flex-direction: column;
+  align-items: center; gap: 10px; text-align: center;
+}
+.state-icon { font-size: 48px; }
+.state-title { font-size: 17px; font-weight: 700; }
+.state-sub { font-size: 13px; color: var(--text-secondary); }
+
+/* ===== MODAL OVERLAY ===== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: none; align-items: flex-end; justify-content: center;
+  z-index: 1000; backdrop-filter: blur(2px);
+}
+.modal-overlay.open { display: flex; }
+.modal-sheet {
+  background: var(--surface); border-radius: 24px 24px 0 0;
+  width: 100%; max-width: 480px; max-height: 90vh;
+  padding: 20px 20px calc(var(--safe-bottom) + 20px);
+  overflow-y: auto;
+  animation: slideUp 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle {
+  width: 40px; height: 4px; background: var(--border);
+  border-radius: 2px; margin: 0 auto 16px;
+}
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+
+/* ===== FORM ELEMENTS ===== */
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 12px; font-weight: 700; color: var(--text-hint); margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 10px 12px;
+  font-size: 14px; background: var(--bg);
+  color: var(--text-primary); outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--primary); }
+.form-textarea { resize: none; min-height: 80px; }
+.form-actions { display: flex; gap: 10px; margin-top: 16px; }
+.form-actions button { flex: 1; height: 46px; border-radius: 10px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; }
+.btn-cancel { background: var(--surface2); color: var(--text-secondary); border: 1.5px solid var(--border) !important; }
+.btn-save { background: var(--primary); color: #fff; }
+.btn-close-modal { background: var(--primary); color: #fff; width: 100%; height: 46px; border-radius: 10px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 16px; }
+
+/* ===== DETAIL SECTION ===== */
+.detail-section {
+  background: var(--surface); border-radius: 12px; border: 1px solid var(--border);
+  padding: 14px; margin-bottom: 10px;
+}
+.detail-section-title { font-size: 13px; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; }
+.detail-section-body { font-size: 14px; color: var(--text-primary); line-height: 1.6; }
+
+/* ===== TOAST ===== */
+.toast {
+  position: fixed; bottom: calc(var(--safe-bottom) + 80px); left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(0,0,0,0.8); color: #fff;
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 14px; white-space: nowrap;
+  opacity: 0; transition: all 0.25s; pointer-events: none;
+  z-index: 9999; max-width: 90vw;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ===== CAMERA BUTTON ===== */
+.add-btn-group {
+  display: flex; gap: 8px; flex-direction: column; padding: 12px;
+}
+.add-source-btn {
+  height: 52px; border-radius: 12px; border: 1.5px dashed var(--border);
+  background: var(--surface); color: var(--text-primary);
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.add-source-btn:active { background: var(--primary-light); border-color: var(--primary); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ HOME VIEW ============ -->
+  <div class="view active" id="view-home">
+    <div class="topbar">
+      <h1>🏗️ 安全质检助手</h1>
+      <span class="count-badge" id="count-badge">0/20</span>
+    </div>
+    <div class="scene-bar">
+      <label>检查场景</label>
+      <select id="prompt-select">
+        <option value="dual">V4.6 安全质量双聚焦</option>
+        <option value="safety">安全隐患专项</option>
+        <option value="quality">质量问题专项</option>
+      </select>
+    </div>
+    <div class="scroll-area" id="home-scroll">
+      <div id="empty-state" class="empty-state">
+        <div class="big-icon">📷</div>
+        <h2>添加施工图片</h2>
+        <p>点击下方 ➕ 添加图片<br>支持相机拍照或从相册选择</p>
+      </div>
+      <div id="task-list" class="task-list" style="display:none"></div>
+    </div>
+    <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="bottom-bar">
+      <button class="btn-clear" onclick="clearAll()">🗑 清空</button>
+      <button class="btn-copy-all" onclick="copyAll()">📋 复制</button>
+      <button class="btn-analyze" onclick="startAnalysis()">▶ 开始分析</button>
+    </div>
+    <div class="status-bar" id="status-bar">就绪</div>
+  </div>
+
+  <!-- ============ SUMMARY VIEW ============ -->
+  <div class="view" id="view-summary">
+    <div class="topbar"><h1>📊 问题汇总</h1></div>
+    <div class="scroll-area" id="summary-scroll">
+      <div style="padding:12px" id="summary-content"></div>
+    </div>
+    <div class="bottom-bar">
+      <button class="btn-copy-report" onclick="copyAll()">📋 复制全部问题</button>
+    </div>
+  </div>
+
+  <!-- ============ DETAIL VIEW ============ -->
+  <div class="view" id="view-detail">
+    <div class="topbar">
+      <button class="btn-back" onclick="closeDetail()">‹ 返回</button>
+      <span class="topbar-title" id="detail-title"></span>
+    </div>
+    <div class="detail-image" id="detail-image-wrap">
+      <img id="detail-img" src="" alt="">
+    </div>
+    <div class="scroll-area">
+      <div style="padding:12px" id="detail-content"></div>
+    </div>
+  </div>
+
+  <!-- ============ NAV BAR ============ -->
+  <nav class="navbar">
+    <button class="nav-btn active" id="nav-home" onclick="switchTab(0)">
+      <span class="nav-icon">🏠</span>主页
+    </button>
+    <button class="nav-btn" id="nav-summary" onclick="switchTab(1)">
+      <span class="nav-icon">📊</span>汇总
+    </button>
+    <button class="nav-btn" id="nav-add" onclick="showAddMenu()">
+      <span class="nav-icon">➕</span>添加
+    </button>
+    <button class="nav-btn" id="nav-settings" onclick="openSettings()">
+      <span class="nav-icon">⚙️</span>设置
+    </button>
+  </nav>
+</div>
+
+<!-- ============ ADD MENU MODAL ============ -->
+<div class="modal-overlay" id="modal-add" onclick="closeModal('modal-add')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">添加图片</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="add-source-btn" onclick="pickFiles('camera')">📷 拍照</button>
+      <button class="add-source-btn" onclick="pickFiles('gallery')">🖼️ 从相册选择</button>
+      <button class="add-source-btn" onclick="pickFiles('file')">📁 从文件选择</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SETTINGS MODAL ============ -->
+<div class="modal-overlay" id="modal-settings" onclick="closeModal('modal-settings')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙️ 设置</div>
+    <div class="form-group">
+      <label class="form-label">🔑 API KEY</label>
+      <input type="password" class="form-input" id="input-apikey" placeholder="粘贴您的 API Key...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">🤖 模型厂商</label>
+      <select class="form-select" id="input-provider">
+        <option value="qwen-vl-max">阿里百炼 (Qwen-VL-Max)</option>
+        <option value="qwen2.5-vl-72b">阿里百炼 (Qwen2.5-VL)</option>
+        <option value="siliconflow-qwen2">硅基流动 (Qwen2-VL)</option>
+      </select>
+    </div>
+    <div class="form-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-settings')">取消</button>
+      <button class="btn-save" onclick="saveSettings()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ EDIT MODAL ============ -->
+<div class="modal-overlay" id="modal-edit" onclick="closeModal('modal-edit')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ 编辑问题</div>
+    <div class="form-group">
+      <label class="form-label">风险等级</label>
+      <select class="form-select" id="edit-level">
+        <option>严重安全隐患</option>
+        <option>一般安全隐患</option>
+        <option>严重质量缺陷</option>
+        <option>一般质量缺陷</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">问题描述</label>
+      <textarea class="form-textarea" id="edit-issue"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">规范依据</label>
+      <textarea class="form-textarea" id="edit-regulation" style="min-height:60px"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">整改措施</label>
+      <textarea class="form-textarea" id="edit-correction" style="min-height:60px"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-edit')">取消</button>
+      <button class="btn-save" onclick="saveEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DETAIL MODAL ============ -->
+<div class="modal-overlay" id="modal-detail" onclick="closeModal('modal-detail')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="modal-detail-content"></div>
+    <button class="btn-close-modal" onclick="closeModal('modal-detail')">关闭</button>
+  </div>
+</div>
+
+<!-- ============ TOAST ============ -->
+<div class="toast" id="toast"></div>
+
+<!-- ============ HIDDEN FILE INPUTS ============ -->
+<input type="file" id="file-camera" accept="image/*" capture="environment" multiple style="display:none" onchange="handleFiles(this.files)">
+<input type="file" id="file-gallery" accept="image/*" multiple style="display:none" onchange="handleFiles(this.files)">
+
+<script>
+// =============================================
+// 全局配置（完整保留业务逻辑）
+// =============================================
+const MAX_IMAGES = 20;
+
+const PROVIDER_PRESETS = {
+  'qwen-vl-max': { base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-vl-max' },
+  'qwen2.5-vl-72b': { base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen2.5-vl-72b' },
+  'siliconflow-qwen2': { base_url: 'https://api.siliconflow.cn/v1', model: 'Qwen/Qwen2-VL-72B-Instruct' }
+};
+
+const RISK_STYLE = {
+  '严重安全隐患': { bg: '#FDE8E8', border: '#E02424', icon: '🔴', priority: 0 },
+  '一般安全隐患': { bg: '#FEF3C7', border: '#D03801', icon: '🟠', priority: 1 },
+  '严重质量缺陷': { bg: '#FFFBEB', border: '#B45309', icon: '🟡', priority: 2 },
+  '一般质量缺陷': { bg: '#E1EFFE', border: '#1A56DB', icon: '🔵', priority: 3 }
+};
+
+const REGULATION_DB = {
+  '安全': {
+    role_desc: '注册安全工程师 | 30 年经验',
+    critical_hazards: ['高处作业不系安全带','安全帽未系下颌带','临边洞口防护缺失','使用挖掘机吊装'],
+    checklist: ['【一眼识别】安全帽：未系下颌带立即报告','【一眼识别】安全带：2m 以上无安全带立即报告','【一眼识别】临边防护：无 1.2m 护栏立即报告'],
+    anti_hallucination: '管理人员在安全通道内检查可短时摘帽；地面作业不强制系安全带。'
+  },
+  '机械': {
+    role_desc: '起重机械专家 | 30 年经验',
+    critical_hazards: ['【致命】使用挖掘机吊装','塔吊限制器失效或被短接','钢丝绳断丝超过10%','施工升降机防坠安全器失效'],
+    checklist: ['【一眼识别】吊装设备：挖掘机、装载机吊物立即报告','【一眼识别】限位器：查看是否有线头短接','【一眼识别】钢丝绳：断丝断股立即报告'],
+    anti_hallucination: '停工状态吊钩无荷载正常；设备表面轻微锈迹不是缺陷。'
+  },
+  '电气': {
+    role_desc: '注册电气工程师 | 30 年经验',
+    critical_hazards: ['临时用电未采用TN-S系统','配电箱未做重复接地','一闸多机','电缆直接拖地或浸水'],
+    checklist: ['【一眼识别】电线颜色：黄绿双色只能是PE线','【一眼识别】配电箱门：必须有跨接软铜线','【一眼识别】插座接线：左零右火上接地'],
+    anti_hallucination: '施工中临时接线待整理正常；备用回路不是故障。'
+  },
+  '管道': {
+    role_desc: '管道工艺专家 | 30 年经验',
+    critical_hazards: ['压力管道使用排水管','阀门无标识或标识错误','法兰垫片使用错误'],
+    checklist: ['【一眼识别】管道颜色：红色消防、绿色给水、蓝色排水、黄色燃气','【一眼识别】法兰螺栓：必须露出2-3扣'],
+    anti_hallucination: '临时封堵盲板不是缺阀门；试压用临时支撑不是支架不足。'
+  },
+  '结构': {
+    role_desc: '结构总工程师 | 30 年经验',
+    critical_hazards: ['模板支撑立杆悬空或无垫板','高大模板未设置扫地杆剪刀撑','混凝土浇筑后出现贯穿裂缝'],
+    checklist: ['【一眼识别】立杆底部：悬空、无垫板立即报告','【一眼识别】混凝土裂缝：宽度超0.3mm立即报告'],
+    anti_hallucination: '未抹面不是不平整；温度裂缝（发丝状）不是结构裂缝。'
+  }
+};
+
+const ROUTER_PROMPT = `你是工程建设总监。识别图片施工内容，选派2-5个专家：
+1.安全 2.机械 3.电气 4.结构 5.管道
+规则：必须包含"安全"；看到机械必须选"机械"；看到管道相关选"管道"。
+输出JSON数组，如：["机械","安全","管道"]`;
+
+function buildAIPrompt(role, kb) {
+  return `你是【${role}】（${kb.role_desc}）。
+## 重大隐患清单
+${kb.critical_hazards.map(h => `- ${h}`).join('\n')}
+⚠️ 发现上述情形必须报告为"严重安全隐患"！
+## 检查清单
+${kb.checklist.join('\n')}
+## 误判警示
+${kb.anti_hallucination}
+## 输出格式（JSON数组，每项包含）
+- risk_level: "严重安全隐患"/"一般安全隐患"/"严重质量缺陷"/"一般质量缺陷"
+- issue: 【${role}】+ 具体描述
+- regulation: 规范条文号
+- correction: 整改措施
+- confidence: 0.0-1.0
+如无问题输出空数组[]`;
+}
+
+// =============================================
+// 状态管理
+// =============================================
+let tasks = [];
+let config = { api_key: '', provider: 'qwen2.5-vl-72b' };
+let currentTab = 0;
+let currentDetailTask = null;
+let editingItem = null;
+let editingTaskId = null;
+let totalAnalyzing = 0;
+let doneAnalyzing = 0;
+
+// =============================================
+// 持久化配置
+// =============================================
+function loadConfig() {
+  try {
+    const s = localStorage.getItem('safety_config');
+    if (s) config = JSON.parse(s);
+  } catch(e) {}
+  document.getElementById('input-apikey').value = config.api_key || '';
+  document.getElementById('input-provider').value = config.provider || 'qwen2.5-vl-72b';
+}
+
+function saveSettings() {
+  config.api_key = document.getElementById('input-apikey').value.trim();
+  config.provider = document.getElementById('input-provider').value;
+  localStorage.setItem('safety_config', JSON.stringify(config));
+  closeModal('modal-settings');
+  showToast('✓ 设置已保存');
+}
+
+// =============================================
+// 导航
+// =============================================
+function switchTab(idx) {
+  currentTab = idx;
+  ['view-home','view-summary','view-detail'].forEach((id, i) => {
+    document.getElementById(id).classList.toggle('active', false);
+  });
+  ['nav-home','nav-summary','nav-add','nav-settings'].forEach((id, i) => {
+    document.getElementById(id).classList.toggle('active', i === idx);
+  });
+  if (idx === 0) {
+    document.getElementById('view-home').classList.add('active');
+    currentDetailTask = null;
+  } else if (idx === 1) {
+    document.getElementById('view-summary').classList.add('active');
+    renderSummary();
+  }
+}
+
+function openDetail(task) {
+  currentDetailTask = task;
+  document.getElementById('detail-title').textContent = '  ' + task.name;
+  const img = document.getElementById('detail-img');
+  img.src = task.dataUrl || '';
+  document.getElementById('view-home').classList.remove('active');
+  document.getElementById('view-summary').classList.remove('active');
+  document.getElementById('view-detail').classList.add('active');
+  renderDetailContent(task);
+}
+
+function closeDetail() {
+  document.getElementById('view-detail').classList.remove('active');
+  if (currentTab === 0) document.getElementById('view-home').classList.add('active');
+  else if (currentTab === 1) {
+    document.getElementById('view-summary').classList.add('active');
+    renderSummary();
+  }
+  currentDetailTask = null;
+}
+
+// =============================================
+// 文件处理
+// =============================================
+function showAddMenu() {
+  openModal('modal-add');
+}
+
+function pickFiles(source) {
+  closeModal('modal-add');
+  if (source === 'camera') {
+    document.getElementById('file-camera').click();
+  } else {
+    document.getElementById('file-gallery').click();
+  }
+}
+
+function handleFiles(files) {
+  if (!files || !files.length) return;
+  const allowed = MAX_IMAGES - tasks.length;
+  if (allowed <= 0) { showToast('最多支持 20 张图片'); return; }
+  let added = 0;
+  const fileArr = Array.from(files).slice(0, allowed);
+
+  fileArr.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const task = {
+        id: Date.now() + '_' + Math.random(),
+        name: file.name,
+        dataUrl: e.target.result,
+        status: 'waiting',
+        data: null
+      };
+      tasks.push(task);
+      addTaskRow(task);
+      added++;
+      updateCount();
+      if (added === fileArr.length) showToast(`✓ 已添加 ${added} 张图片`);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// =============================================
+// UI 渲染：主页任务列表
+// =============================================
+function updateCount() {
+  document.getElementById('count-badge').textContent = `${tasks.length}/20`;
+  const empty = document.getElementById('empty-state');
+  const list = document.getElementById('task-list');
+  if (tasks.length === 0) { empty.style.display = 'flex'; list.style.display = 'none'; }
+  else { empty.style.display = 'none'; list.style.display = 'flex'; }
+}
+
+function addTaskRow(task) {
+  const list = document.getElementById('task-list');
+  const row = document.createElement('div');
+  row.className = 'task-row';
+  row.id = 'row-' + task.id;
+  row.onclick = () => openDetail(task);
+  row.innerHTML = `
+    <img class="task-thumb" src="${task.dataUrl}" alt="">
+    <div class="task-info">
+      <div class="task-name">${escHtml(task.name)}</div>
+      <div class="task-status" id="status-${task.id}">⏳ 等待中</div>
+    </div>
+    <span class="task-dot" id="dot-${task.id}">⏳</span>
+    <span class="task-arrow">›</span>
+  `;
+  list.appendChild(row);
+}
+
+function updateTaskStatus(taskId, status, detail) {
+  const el = document.getElementById('status-' + taskId);
+  const dot = document.getElementById('dot-' + taskId);
+  if (!el) return;
+  const map = {
+    waiting:   ['⏳', '#9CA3AF', '等待中'],
+    analyzing: ['🔄', '#1A56DB', detail || '分析中'],
+    done:      ['✅', '#057A55', detail || '完成'],
+    error:     ['❌', '#E02424', detail || '失败']
+  };
+  const [icon, color, text] = map[status] || map.waiting;
+  if (dot) dot.textContent = icon;
+  el.textContent = text;
+  el.style.color = color;
+}
+
+// =============================================
+// AI 分析核心逻辑（完整保留）
+// =============================================
+async function startAnalysis() {
+  if (!config.api_key) {
+    showToast('⚠️ 请先在设置中配置 API Key');
+    setTimeout(() => openSettings(), 500);
+    return;
+  }
+  const waiting = tasks.filter(t => t.status === 'waiting' || t.status === 'error');
+  if (!waiting.length) { showToast('没有待分析的图片'); return; }
+
+  totalAnalyzing = waiting.length;
+  doneAnalyzing = 0;
+  setProgress(0, true);
+  setStatus(`正在分析 ${waiting.length} 张...`);
+
+  waiting.forEach(task => {
+    task.status = 'analyzing';
+    updateTaskStatus(task.id, 'analyzing');
+    analyzeTask(task);
+  });
+}
+
+async function analyzeTask(task) {
+  try {
+    const preset = PROVIDER_PRESETS[config.provider];
+    const b64 = task.dataUrl.split(',')[1];
+
+    // 第一步：路由分诊
+    updateTaskStatus(task.id, 'analyzing', '🔍 智能分诊中...');
+    if (currentDetailTask?.id === task.id) renderDetailContent(task);
+
+    const routerResp = await callAI(preset, ROUTER_PROMPT,
+      '请分析施工内容并选派专家', b64);
+
+    let roles = parseRoles(routerResp);
+    if (!roles.length) roles = ['安全'];
+    if (!roles.includes('安全')) roles.push('安全');
+
+    // 第二步：各专家分析
+    const allIssues = [];
+    for (let i = 0; i < roles.length; i++) {
+      const role = roles[i];
+      task.progress_msg = `🔬 ${role}专家分析 (${i+1}/${roles.length})`;
+      updateTaskStatus(task.id, 'analyzing', task.progress_msg);
+      if (currentDetailTask?.id === task.id) renderDetailContent(task);
+
+      const kb = REGULATION_DB[role] || REGULATION_DB['安全'];
+      const resp = await callAI(preset, buildAIPrompt(role, kb),
+        '请分析图片，找出所有问题。输出JSON数组。', b64);
+      const issues = parseIssues(resp, role);
+      allIssues.push(...issues);
+    }
+
+    task.status = 'done';
+    task.data = allIssues;
+    const cnt = allIssues.length;
+    updateTaskStatus(task.id, 'done', cnt ? `发现 ${cnt} 个问题` : '未发现问题');
+
+  } catch (err) {
+    task.status = 'error';
+    task.error = err.message || '网络错误';
+    updateTaskStatus(task.id, 'error', task.error.slice(0, 30));
+  }
+
+  if (currentDetailTask?.id === task.id) renderDetailContent(task);
+
+  doneAnalyzing++;
+  setProgress(Math.round(doneAnalyzing / totalAnalyzing * 100), true);
+
+  if (doneAnalyzing >= totalAnalyzing) {
+    setProgress(100, false);
+    const total = tasks.reduce((s, t) => s + (t.data?.length || 0), 0);
+    setStatus(`分析完成，共 ${total} 个问题`);
+    showToast(`✅ 分析完成！发现 ${total} 个问题`);
+  }
+}
+
+async function callAI(preset, systemPrompt, userText, b64) {
+  const resp = await fetch(`${preset.base_url}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.api_key}`
+    },
+    body: JSON.stringify({
+      model: preset.model,
+      temperature: 0.3,
+      max_tokens: 4096,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: [
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${b64}` } },
+          { type: 'text', text: userText }
+        ]}
+      ]
+    })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || `HTTP ${resp.status}`);
+  }
+  const data = await resp.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
+function parseRoles(text) {
+  try {
+    const m = text.match(/\[.*?\]/s);
+    if (m) return JSON.parse(m[0]);
+  } catch(e) {}
+  return [];
+}
+
+function parseIssues(text, role) {
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    const s = clean.indexOf('['), e = clean.lastIndexOf(']') + 1;
+    if (s !== -1 && e > 0) {
+      const arr = JSON.parse(clean.slice(s, e));
+      return arr.filter(x => typeof x === 'object').map(x => ({ ...x, category: role }));
+    }
+  } catch(e) {}
+  return [];
+}
+
+// =============================================
+// 渲染详情页
+// =============================================
+function renderDetailContent(task) {
+  const el = document.getElementById('detail-content');
+  if (!el) return;
+  el.innerHTML = '';
+
+  if (task.status === 'waiting') {
+    el.innerHTML = stateCard('⏳', '等待分析', '点击主页「▶ 开始分析」', '#9CA3AF');
+  } else if (task.status === 'analyzing') {
+    el.innerHTML = stateCard('🔄', '正在分析...', task.progress_msg || '', '#1A56DB');
+  } else if (task.status === 'error') {
+    el.innerHTML = stateCard('❌', '分析失败', task.error || '', '#E02424');
+  } else if (task.status === 'done') {
+    const data = task.data || [];
+    if (!data.length) {
+      el.innerHTML = stateCard('✅', '未发现问题', '该图片未检测到明显安全质量隐患', '#057A55');
+    } else {
+      const sorted = [...data].sort((a, b) =>
+        (RISK_STYLE[a.risk_level]?.priority ?? 9) - (RISK_STYLE[b.risk_level]?.priority ?? 9));
+
+      // 统计卡
+      const counts = {};
+      data.forEach(x => counts[x.risk_level] = (counts[x.risk_level] || 0) + 1);
+      const badgeHTML = Object.entries(counts).map(([lvl, cnt]) => {
+        const st = RISK_STYLE[lvl] || RISK_STYLE['一般质量缺陷'];
+        return `<span class="stat-badge" style="background:${st.bg};color:${st.border};border-color:${st.border}">${st.icon} ${lvl.slice(0,4)} ${cnt}个</span>`;
+      }).join('');
+
+      const statsDiv = document.createElement('div');
+      statsDiv.className = 'stats-card';
+      statsDiv.innerHTML = `<div class="stats-title">共 ${data.length} 个问题</div><div class="stats-badges">${badgeHTML}</div>`;
+      el.appendChild(statsDiv);
+
+      sorted.forEach((item, i) => {
+        el.appendChild(buildRiskCard(item, i + 1, task.id));
+      });
+    }
+  }
+}
+
+// =============================================
+// 渲染汇总页
+// =============================================
+function renderSummary() {
+  const el = document.getElementById('summary-content');
+  const allIssues = [];
+  tasks.forEach(t => {
+    if (t.status === 'done' && t.data) {
+      t.data.forEach(iss => allIssues.push({ ...iss, _src: t.name, _taskId: t.id }));
+    }
+  });
+
+  if (!allIssues.length) {
+    el.innerHTML = `<div class="state-card" style="margin-top:20px">
+      <div class="state-icon">📊</div>
+      <div class="state-title">暂无分析结果</div>
+      <div class="state-sub">请先在主页添加并分析图片</div>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = '';
+  const sorted = [...allIssues].sort((a, b) =>
+    (RISK_STYLE[a.risk_level]?.priority ?? 9) - (RISK_STYLE[b.risk_level]?.priority ?? 9));
+
+  const counts = {};
+  allIssues.forEach(x => counts[x.risk_level] = (counts[x.risk_level] || 0) + 1);
+  const badgeHTML = ['严重安全隐患','一般安全隐患','严重质量缺陷','一般质量缺陷']
+    .filter(lvl => counts[lvl])
+    .map(lvl => {
+      const st = RISK_STYLE[lvl];
+      return `<span class="stat-badge" style="background:${st.bg};color:${st.border};border-color:${st.border}">${st.icon} ${lvl.slice(0,4)} ${counts[lvl]}个</span>`;
+    }).join('');
+
+  const stats = document.createElement('div');
+  stats.className = 'stats-card';
+  stats.innerHTML = `<div class="stats-title">共发现 ${allIssues.length} 个问题</div><div class="stats-badges">${badgeHTML}</div>`;
+  el.appendChild(stats);
+
+  sorted.forEach((item, i) => {
+    const src = document.createElement('div');
+    src.className = 'src-label';
+    src.textContent = `📷 ${item._src}`;
+    el.appendChild(src);
+    el.appendChild(buildRiskCard(item, i + 1, item._taskId));
+  });
+}
+
+// =============================================
+// 风险卡片构建
+// =============================================
+function buildRiskCard(item, index, taskId) {
+  const st = RISK_STYLE[item.risk_level] || RISK_STYLE['一般质量缺陷'];
+  const issueShort = (item.issue || '').length > 80
+    ? (item.issue || '').slice(0, 80) + '...'
+    : (item.issue || '');
+
+  const card = document.createElement('div');
+  card.className = 'risk-card';
+  card.style.cssText = `background:${st.bg};border-color:${st.border};margin-bottom:10px`;
+
+  card.innerHTML = `
+    <div class="card-header">
+      <div class="card-num" style="background:${st.border}">${index}</div>
+      <div class="card-badge" style="background:${st.border}">${st.icon} ${item.risk_level}</div>
+      ${item.category ? `<div class="card-cat">${escHtml(item.category)}</div>` : ''}
+      <div class="card-actions">
+        <button class="card-btn btn-edit" onclick="openEdit(event, '${escAttr(item.issue)}','${escAttr(taskId)}')">编辑</button>
+        <button class="card-btn btn-copy-card" onclick="copyIssue(event, this)">复制</button>
+        <button class="card-btn btn-delete" onclick="deleteIssue(event, '${escAttr(item.issue)}','${escAttr(taskId)}')">删除</button>
+      </div>
+    </div>
+    <div class="card-issue">${escHtml(issueShort)}</div>
+    <div class="card-hint">💬 点击查看详情</div>
+    ${item.regulation || item.correction ? '<hr class="card-divider">' : ''}
+    <div class="card-footer">
+      <div class="card-icons">
+        ${item.regulation ? '<span>📋</span>' : ''}
+        ${item.correction ? '<span>✅</span>' : ''}
+      </div>
+      ${item.confidence ? `<span class="card-conf">置信度 ${Math.round(item.confidence * 100)}%</span>` : ''}
+    </div>
+  `;
+
+  // 存储完整数据
+  card._item = item;
+  card._taskId = taskId;
+
+  card.addEventListener('click', (e) => {
+    if (e.target.closest('.card-btn')) return;
+    showIssueDetail(item);
+  });
+
+  return card;
+}
+
+// =============================================
+// 问题操作
+// =============================================
+function findItem(issue_text, taskId) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task?.data) return null;
+  return task.data.find(x => x.issue === issue_text);
+}
+
+function openEdit(e, issueText, taskId) {
+  e.stopPropagation();
+  const item = findItem(issueText, taskId);
+  if (!item) return;
+  editingItem = item;
+  editingTaskId = taskId;
+  document.getElementById('edit-level').value = item.risk_level || '一般质量缺陷';
+  document.getElementById('edit-issue').value = item.issue || '';
+  document.getElementById('edit-regulation').value = item.regulation || '';
+  document.getElementById('edit-correction').value = item.correction || '';
+  openModal('modal-edit');
+}
+
+function saveEdit() {
+  if (!editingItem) return;
+  editingItem.risk_level = document.getElementById('edit-level').value;
+  editingItem.issue = document.getElementById('edit-issue').value.trim();
+  editingItem.regulation = document.getElementById('edit-regulation').value.trim();
+  editingItem.correction = document.getElementById('edit-correction').value.trim();
+  closeModal('modal-edit');
+  showToast('✓ 已保存修改');
+  if (currentDetailTask) renderDetailContent(currentDetailTask);
+  if (currentTab === 1) renderSummary();
+}
+
+function deleteIssue(e, issueText, taskId) {
+  e.stopPropagation();
+  if (!confirm(`确定删除此问题？\n\n${issueText.slice(0, 50)}...`)) return;
+  const task = tasks.find(t => t.id === taskId);
+  if (task?.data) task.data = task.data.filter(x => x.issue !== issueText);
+  showToast('✓ 已删除');
+  if (currentDetailTask?.id === taskId) renderDetailContent(currentDetailTask);
+  if (currentTab === 1) renderSummary();
+}
+
+function copyIssue(e, btn) {
+  e.stopPropagation();
+  const card = btn.closest('.risk-card');
+  const item = card._item;
+  if (!item) return;
+  const text = `【${item.risk_level}】\n${item.issue}\n\n📋 规范依据：${item.regulation || '—'}\n✅ 整改措施：${item.correction || '—'}`;
+  copyText(text);
+  showToast('✓ 已复制');
+}
+
+function showIssueDetail(item) {
+  const st = RISK_STYLE[item.risk_level] || RISK_STYLE['一般质量缺陷'];
+  document.getElementById('modal-detail-content').innerHTML = `
+    <div style="background:${st.border};color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:700;margin-bottom:14px">
+      ${st.icon} ${item.risk_level}
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">📝 问题描述</div>
+      <div class="detail-section-body">${escHtml(item.issue || '')}</div>
+    </div>
+    ${item.regulation ? `<div class="detail-section">
+      <div class="detail-section-title">📋 规范依据</div>
+      <div class="detail-section-body" style="color:var(--text-secondary)">${escHtml(item.regulation)}</div>
+    </div>` : ''}
+    ${item.correction ? `<div class="detail-section">
+      <div class="detail-section-title">✅ 整改措施</div>
+      <div class="detail-section-body" style="color:var(--success)">${escHtml(item.correction)}</div>
+    </div>` : ''}
+  `;
+  openModal('modal-detail');
+}
+
+// =============================================
+// 复制全部
+// =============================================
+function copyAll() {
+  const allIssues = [];
+  tasks.forEach(t => {
+    if (t.status === 'done' && t.data) {
+      t.data.forEach(iss => allIssues.push({ ...iss, _src: t.name }));
+    }
+  });
+  if (!allIssues.length) { showToast('暂无可复制的问题'); return; }
+
+  const sorted = [...allIssues].sort((a, b) =>
+    (RISK_STYLE[a.risk_level]?.priority ?? 9) - (RISK_STYLE[b.risk_level]?.priority ?? 9));
+
+  const now = new Date().toLocaleString('zh-CN');
+  const lines = [
+    '🏗️ 质量安全检查问题清单',
+    `检查时间：${now}`,
+    `分析图片：${tasks.filter(t => t.status === 'done').length} 张`,
+    `发现问题：${allIssues.length} 个`,
+    '='.repeat(40), ''
+  ];
+  sorted.forEach((iss, i) => {
+    lines.push(
+      `${i+1}. 【${iss.risk_level}】`,
+      `   来源：${iss._src}`,
+      `   ${iss.issue}`,
+      `   📋 依据：${iss.regulation || '—'}`,
+      `   ✅ 整改：${iss.correction || '—'}`,
+      ''
+    );
+  });
+  copyText(lines.join('\n'));
+  showToast(`✅ 已复制 ${allIssues.length} 个问题`);
+}
+
+// =============================================
+// 清空
+// =============================================
+function clearAll() {
+  if (!tasks.length) return;
+  if (!confirm('确定要清空所有图片吗？')) return;
+  tasks = [];
+  document.getElementById('task-list').innerHTML = '';
+  updateCount();
+  setStatus('就绪');
+  showToast('✓ 队列已清空');
+}
+
+// =============================================
+// 工具函数
+// =============================================
+function stateCard(icon, title, sub, color) {
+  return `<div class="state-card">
+    <div class="state-icon">${icon}</div>
+    <div class="state-title" style="color:${color}">${escHtml(title)}</div>
+    <div class="state-sub">${escHtml(sub)}</div>
+  </div>`;
+}
+
+function setStatus(text) {
+  document.getElementById('status-bar').textContent = text;
+}
+
+function setProgress(val, visible) {
+  const bar = document.getElementById('progress-bar');
+  bar.style.display = visible ? 'block' : 'none';
+  document.getElementById('progress-fill').style.width = val + '%';
+}
+
+function showToast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function openSettings() {
+  document.getElementById('input-apikey').value = config.api_key || '';
+  document.getElementById('input-provider').value = config.provider || 'qwen2.5-vl-72b';
+  openModal('modal-settings');
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch(e) {
+    const el = document.createElement('textarea');
+    el.value = text; el.style.position = 'fixed'; el.style.opacity = '0';
+    document.body.appendChild(el); el.select();
+    document.execCommand('copy'); document.body.removeChild(el);
+  }
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escAttr(str) {
+  return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;').slice(0, 200);
+}
+
+// =============================================
+// Service Worker 注册
+// =============================================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// =============================================
+// 初始化
+// =============================================
+loadConfig();
+updateCount();
+</script>
+</body>
+</html>
