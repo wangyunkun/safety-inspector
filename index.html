@@ -1214,82 +1214,173 @@ async function analyzeTask(task, promptMode){
 }
 
 // =============================================
-// 高阶去重算法：放宽合并阈值，保留更多问题
+// 语义指纹去重引擎 V3（实测校准版）
+// 核心思路：不同专家描述同一问题时用词差异极大，
+// 纯字符串相似度失效 → 多维语义指纹：词族覆盖 + Dice + 规范条文
 // =============================================
-function deduplicateIssues(issues) {
-  if (!issues || !issues.length) return [];
-  const result = [];
-  
-  const sortedIssues = [...issues].sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
 
-  for (const item of sortedIssues) {
-    if (!item.issue) continue;
-    
-    const dupIndex = result.findIndex(existing => isSimilarIssue(item, existing));
+// 问题类型关键词族：命中同族词 = 属于同类问题
+const ISSUE_TOPIC_GROUPS = [
+  ['安全帽','头盔','防护帽','帽子','未戴帽','裸头'],          // 0
+  ['安全带','安全绳','防坠','坠落','高处作业','临边','洞口'],  // 1
+  ['脚手架','脚手板','踢脚板','探头板','满铺'],               // 2
+  ['挖掘机','挖机','铲车','装载机','推土机'],                 // 3
+  ['塔吊','起重机','吊车','吊装','吊钩','吊篮','吊物'],       // 4
+  ['钢丝绳','断丝','断股','锈蚀','磨损'],                     // 5
+  ['监护','指挥','监督','旁站','反光背心','无专人'],           // 6
+  ['气瓶','氧气','乙炔','气焊','气割','动火'],                // 7
+  ['消防通道','防火','灭火器','消防栓'],                       // 8
+  ['电箱','配电箱','漏电','临时用电','电缆','电线'],           // 9
+  ['模板','支撑','支架','扣件','立杆','横杆'],                 // 10
+  ['钢筋','绑扎','保护层'],                                    // 11
+  ['混凝土','浇筑','振捣','养护','强度'],                      // 12
+  ['砌体','砌砖','砂浆','灰缝','拉结筋'],                      // 13
+  ['基坑','围护','降水','放坡'],                               // 14
+  ['裂缝','开裂','变形','沉降'],                               // 15
+  ['防水','渗漏','积水','防潮'],                               // 16
+  ['扬尘','裸土','围挡','环保'],                               // 17
+  ['管道','法兰','阀门','焊缝'],                               // 18
+  ['警戒','隔离','护栏','防护栏'],                             // 19
+];
 
-    if (dupIndex !== -1) {
-      const existing = result[dupIndex];
-      if (item.category && !existing.category.includes(item.category)) {
-        existing.category += `、${item.category}`;
-        existing.confidence = Math.min((existing.confidence || 0.8) + 0.05, 1.0); 
-      }
-    } else {
-      result.push(JSON.parse(JSON.stringify(item)));
-    }
-  }
-  return result;
+function extractTopicFingerprint(text) {
+  const normalized = (text || '').replace(/\s/g, '');
+  const matched = new Set();
+  ISSUE_TOPIC_GROUPS.forEach((group, idx) => {
+    if (group.some(kw => normalized.includes(kw))) matched.add(idx);
+  });
+  return matched;
 }
 
-function isSimilarIssue(a, b) {
-  const coreA = extractCore(a.issue);
-  const coreB = extractCore(b.issue);
-  const sim = diceCoefficient(coreA, coreB);
+// 覆盖率优先：交集 / min(A,B)，解决小集合 Jaccard 严苛问题
+// 实测：脚手板(2族vs2族,交集1) → 覆盖率=0.5；安全帽(1族vs1族,交集1) → 覆盖率=1.0
+function topicSimilarity(setA, setB) {
+  if (!setA.size || !setB.size) return 0;
+  let inter = 0;
+  setA.forEach(v => { if (setB.has(v)) inter++; });
+  if (inter === 0) return 0;
+  const coverage = inter / Math.min(setA.size, setB.size);
+  const jaccard   = inter / new Set([...setA, ...setB]).size;
+  return coverage * 0.7 + jaccard * 0.3;
+}
 
-  // 1. 完全相同的问题（高度重合）
-  if (sim > 0.85) return true;
-  
-  // 2. 风险等级相同且核心描述非常相似
-  if (sim > 0.75 && a.risk_level === b.risk_level) return true;
-  
-  // 3. 整改措施几乎一模一样
-  const corrSim = diceCoefficient(extractCore(a.correction), extractCore(b.correction));
-  if (corrSim > 0.90 && a.risk_level === b.risk_level) return true;
+function extractRegCodes(text) {
+  const codes = new Set();
+  ((text || '').match(/[A-Z]{1,3}\s?\d{4,5}|第\s?\d+[\.\d]*\s?条/g) || [])
+    .forEach(m => codes.add(m.replace(/\s/g, '')));
+  return codes;
+}
 
-  return false;
+function regCodeOverlap(a, b) {
+  const ra = extractRegCodes((a.regulation||'') + (a.issue||''));
+  const rb = extractRegCodes((b.regulation||'') + (b.issue||''));
+  if (!ra.size || !rb.size) return 0;
+  let inter = 0; ra.forEach(v => { if (rb.has(v)) inter++; });
+  return inter / Math.min(ra.size, rb.size);
 }
 
 function extractCore(text) {
   return (text || '')
-    .replace(/【[^】]+】/g, '')               
-    .replace(/[，。、！？；：.,!?;:\s]/g, '')   
-    .replace(/立即|必须|严禁|发现|存在|现场|现象|导致|建议|未见/g, '') 
-    .toLowerCase()
-    .trim();
+    .replace(/【[^】]+】/g, '')
+    .replace(/[，。、！？；：.,!?;:\s]/g, '')
+    .replace(/立即|必须|严禁|发现|存在|现场|现象|导致|建议|未见|请|应该|应当/g, '')
+    .toLowerCase().trim();
 }
 
 function diceCoefficient(str1, str2) {
   if (!str1 || !str2) return 0;
   if (str1 === str2) return 1;
-  if (str1.length < 2 || str2.length < 2) return 0; 
-
-  let bg1 = new Map(), bg2 = new Map();
+  if (str1.length < 2 || str2.length < 2) return 0;
+  const bg1 = new Map(), bg2 = new Map();
   for (let i = 0; i < str1.length - 1; i++) {
-    const bg = str1.substring(i, i + 2);
-    bg1.set(bg, (bg1.get(bg) || 0) + 1);
+    const bg = str1.substring(i, i+2); bg1.set(bg, (bg1.get(bg)||0)+1);
   }
   for (let i = 0; i < str2.length - 1; i++) {
-    const bg = str2.substring(i, i + 2);
-    bg2.set(bg, (bg2.get(bg) || 0) + 1);
+    const bg = str2.substring(i, i+2); bg2.set(bg, (bg2.get(bg)||0)+1);
   }
-
   let intersection = 0;
-  for (let [bg, count] of bg1.entries()) {
-    if (bg2.has(bg)) {
-      intersection += Math.min(count, bg2.get(bg));
+  for (const [bg, count] of bg1.entries()) {
+    if (bg2.has(bg)) intersection += Math.min(count, bg2.get(bg));
+  }
+  return (2.0 * intersection) / ((str1.length-1) + (str2.length-1));
+}
+
+// ── 5通道综合判断：是否为同一问题 ──
+function isSimilarIssue(a, b) {
+  const coreA = extractCore(a.issue);
+  const coreB = extractCore(b.issue);
+  const diceSim = diceCoefficient(coreA, coreB);
+
+  // 通道1：字符高度相似（表达方式接近）
+  if (diceSim > 0.82) return true;
+
+  // 通道2：同风险等级 + 字符较相似
+  if (diceSim > 0.60 && a.risk_level === b.risk_level) return true;
+
+  // 通道3：语义主题词族覆盖（核心通道，解决跨专家异词同义）
+  // 阈值 0.45 经实测校准：覆盖安全帽/无监护/脚手板/钢丝绳等全场景
+  const topicA = extractTopicFingerprint(a.issue + (a.correction||''));
+  const topicB = extractTopicFingerprint(b.issue + (b.correction||''));
+  const topicSim = topicSimilarity(topicA, topicB);
+  if (topicSim >= 0.45 && a.risk_level === b.risk_level) return true;
+
+  // 通道4：引用同一规范条文 + 同等级 + 主题有关联（兜底精确匹配）
+  if (regCodeOverlap(a, b) >= 1 && a.risk_level === b.risk_level && topicSim > 0.2) return true;
+
+  // 通道5：整改措施字符高度相似（行动一致即同一问题）
+  const corrSim = diceCoefficient(extractCore(a.correction||''), extractCore(b.correction||''));
+  if (corrSim > 0.75 && a.risk_level === b.risk_level) return true;
+
+  return false;
+}
+
+// ── 去重主函数：合并同类问题并记录多专家来源 ──
+function deduplicateIssues(issues) {
+  if (!issues || !issues.length) return [];
+  const result = [];
+
+  // 置信度高的排前面，优先保留描述质量更高的版本
+  const sortedIssues = [...issues].sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+
+  for (const item of sortedIssues) {
+    if (!item.issue) continue;
+
+    const dupIndex = result.findIndex(existing => isSimilarIssue(item, existing));
+
+    if (dupIndex !== -1) {
+      // ── 发现重复：合并专家信息 ──
+      const existing = result[dupIndex];
+      const newExpert = item.category;
+
+      // 维护 _experts 数组（去重）
+      if (!existing._experts) existing._experts = [existing.category];
+      if (newExpert && !existing._experts.includes(newExpert)) {
+        existing._experts.push(newExpert);
+      }
+
+      // category 字段同步更新（兼容旧逻辑）
+      if (newExpert && !existing.category.includes(newExpert)) {
+        existing.category += `、${newExpert}`;
+      }
+
+      // 多专家共同发现，置信度加成
+      existing.confidence = Math.min((existing.confidence || 0.8) + 0.05, 1.0);
+
+      // 取更完整的 regulation / correction（字数更多的优先）
+      if ((item.regulation || '').length > (existing.regulation || '').length) {
+        existing.regulation = item.regulation;
+      }
+      if ((item.correction || '').length > (existing.correction || '').length) {
+        existing.correction = item.correction;
+      }
+    } else {
+      // ── 新问题：初始化 _experts 数组 ──
+      const copy = JSON.parse(JSON.stringify(item));
+      copy._experts = copy.category ? [copy.category] : [];
+      result.push(copy);
     }
   }
-  const total = (str1.length - 1) + (str2.length - 1);
-  return (2.0 * intersection) / total;
+  return result;
 }
 
 async function callAI(preset,system,user,b64,temp=0.3,maxTokens=2048){
@@ -1326,6 +1417,11 @@ function parseIssues(text,role){
   }catch(e){}
   return[];
 }
+
+let zoomLevel=1,zoomPanX=0,zoomPanY=0,isPanning=false,pinchDist=0;
+let panStartX=0,panStartY=0,panStartPX=0,panStartPY=0;
+let fsZoomLevel=1,fsPanX=0,fsPanY=0,fsIsPanning=false,fsPinchDist=0;
+let fsPanStartX=0,fsPanStartY=0,fsPanStartPX=0,fsPanStartPY=0;
 
 function initZoom(){zoomLevel=1;zoomPanX=0;zoomPanY=0;applyZoom();}
 function applyZoom(){
@@ -1488,14 +1584,32 @@ function renderSummary(){
 function buildRiskCard(item,index,taskId){
   const st=RISK_STYLE[item.risk_level]||RISK_STYLE['一般质量缺陷'];
   const issueShort=(item.issue||'').length>80?(item.issue||'').slice(0,80)+'...':(item.issue||'');
+
+  // 多专家标签渲染
+  const experts = item._experts && item._experts.length > 0 ? item._experts : (item.category ? [item.category] : []);
+  const isMultiExpert = experts.length > 1;
+  const EXPERT_COLORS = {
+    '安全':'#7C3AED','机械':'#1D4ED8','消防':'#B91C1C','土建':'#065F46',
+    '机电':'#0369A1','结构':'#9A3412','电气':'#92400E','基坑':'#155E75',
+    '边坡':'#14532D','隧洞':'#3B0764','水利':'#1E3A5F','给排水':'#134E4A',
+    '环保':'#166534','管道':'#831843'
+  };
+  const expertTagsHTML = experts.map(exp => {
+    const color = EXPERT_COLORS[exp] || '#374151';
+    return `<span style="display:inline-flex;align-items:center;background:${color};color:#fff;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;">${exp}</span>`;
+  }).join('');
+  const multiExpertBadge = isMultiExpert
+    ? `<span style="display:inline-flex;align-items:center;gap:3px;background:linear-gradient(90deg,#7C3AED,#1D4ED8);color:#fff;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;">🔁 ${experts.length}专家确认</span>`
+    : '';
+
   const card=document.createElement('div');
   card.className='risk-card fade-in';
-  card.style.cssText=`background:${st.bg};border-color:${st.border}`;
+  card.style.cssText=`background:${st.bg};border-color:${st.border}${isMultiExpert?';box-shadow:0 2px 12px rgba(124,58,237,0.15)':''}`;
   card.innerHTML=`
     <div class="card-header">
       <div class="card-num" style="background:${st.border}">${index}</div>
       <div class="card-badge" style="background:${st.border}">${st.icon} ${item.risk_level}</div>
-      ${item.category?`<div class="card-cat">${escHtml(item.category)}</div>`:''}
+      <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">${expertTagsHTML}${multiExpertBadge}</div>
       <div class="card-actions">
         <button class="card-btn btn-edit">编辑</button>
         <button class="card-btn btn-copy-card">复制</button>
@@ -1545,13 +1659,31 @@ function deleteIssue(item,taskId){
   if(currentTab===1) renderSummary();
 }
 function copyIssue(item){
-  const text=`【${item.risk_level}】\n${item.issue}\n\n📋 规范依据：${item.regulation||'—'}\n✅ 整改措施：${item.correction||'—'}`;
+  const experts = item._experts && item._experts.length > 0 ? item._experts : (item.category ? [item.category] : []);
+  const expertLabel = experts.length > 1 ? `${experts.join('、')}（${experts.length}专家共同确认）` : (experts[0] || '—');
+  const text=`【${item.risk_level}】\n专业来源：${expertLabel}\n${item.issue}\n\n📋 规范依据：${item.regulation||'—'}\n✅ 整改措施：${item.correction||'—'}`;
   copyText(text);showToast('✓ 已复制');
 }
 function showIssueDetail(item){
   const st=RISK_STYLE[item.risk_level]||RISK_STYLE['一般质量缺陷'];
+  const experts = item._experts && item._experts.length > 0 ? item._experts : (item.category ? [item.category] : []);
+  const EXPERT_COLORS = {
+    '安全':'#7C3AED','机械':'#1D4ED8','消防':'#B91C1C','土建':'#065F46',
+    '机电':'#0369A1','结构':'#9A3412','电气':'#92400E','基坑':'#155E75',
+    '边坡':'#14532D','隧洞':'#3B0764','水利':'#1E3A5F','给排水':'#134E4A',
+    '环保':'#166534','管道':'#831843'
+  };
+  const expertTagsHTML = experts.map(exp => {
+    const color = EXPERT_COLORS[exp] || '#374151';
+    return `<span style="display:inline-flex;align-items:center;background:${color};color:#fff;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700;">${exp}专家</span>`;
+  }).join('');
+  const multiNote = experts.length > 1
+    ? `<div style="background:linear-gradient(90deg,rgba(124,58,237,0.1),rgba(29,78,216,0.1));border:1px solid #7C3AED;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#5B21B6;">🔁 该问题由 <strong>${experts.join('、')}</strong> 共 ${experts.length} 位专家共同识别，置信度更高</div>`
+    : '';
   document.getElementById('modal-detail-content').innerHTML=`
     <div style="background:${st.border};color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:700;margin-bottom:14px">${st.icon} ${item.risk_level}</div>
+    ${multiNote}
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">${expertTagsHTML}</div>
     <div class="detail-section"><div class="detail-section-title">📝 问题描述</div><div class="detail-section-body">${escHtml(item.issue||'')}</div></div>
     ${item.regulation?`<div class="detail-section"><div class="detail-section-title">📋 规范依据</div><div class="detail-section-body" style="color:var(--text-secondary)">${escHtml(item.regulation)}</div></div>`:''}
     ${item.correction?`<div class="detail-section"><div class="detail-section-title">✅ 整改措施</div><div class="detail-section-body" style="color:var(--success)">${escHtml(item.correction)}</div></div>`:''}`;
@@ -1566,7 +1698,9 @@ function copyAll(){
   const now=new Date().toLocaleString('zh-CN');
   const lines=['🏗️ 质量安全检查问题清单',`检查时间：${now}`,`分析图片：${tasks.filter(t=>t.status==='done').length}张`,`发现问题：${allIssues.length}个`,'='.repeat(40),''];
   sorted.forEach((iss,i)=>{
-    lines.push(`${i+1}. 【${iss.risk_level}】`,`   图片：${iss._src}`,`   [${iss.category}] ${iss.issue}`,`   📋 依据：${iss.regulation||'—'}`,`   ✅ 整改：${iss.correction||'—'}`,'');
+    const experts = iss._experts && iss._experts.length > 0 ? iss._experts : (iss.category ? [iss.category] : []);
+    const expertLabel = experts.length > 1 ? `${experts.join('、')}（${experts.length}专家确认）` : (experts[0] || '—');
+    lines.push(`${i+1}. 【${iss.risk_level}】`,`   图片：${iss._src}`,`   专业：${expertLabel}`,`   [${iss.category}] ${iss.issue}`,`   📋 依据：${iss.regulation||'—'}`,`   ✅ 整改：${iss.correction||'—'}`,'');
   });
   copyText(lines.join('\n'));
   showToast(`✅ 已复制${allIssues.length}个问题`);
