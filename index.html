@@ -251,7 +251,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
   <!-- HOME VIEW -->
   <div class="view active" id="view-home">
     <div class="topbar">
-      <h1>🏗️ 安全质量助手V3.6</h1>
+      <h1>🏗️ 安全质量助手V4.0</h1>
       <span class="count-badge" id="count-badge">0/20</span>
     </div>
     <div class="scene-bar">
@@ -336,6 +336,39 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
         <div style="text-align:center;font-size:12px;color:var(--text-hint);line-height:1.6">
           API Key 仅保存在您的设备本地<br>不上传任何服务器
         </div>
+
+        <!-- 企业内规库 -->
+        <div class="settings-section">
+          <div class="settings-item" style="flex-direction:column;align-items:flex-start;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px;width:100%">
+              <span class="settings-icon">📋</span>
+              <span class="settings-label">企业内规库</span>
+              <span id="corp-rules-badge" style="font-size:11px;padding:2px 8px;border-radius:10px;background:var(--surface2);color:var(--text-hint);border:1px solid var(--border)">未加载</span>
+            </div>
+            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;padding-left:4px">
+              上传公司内部管理规定 JSON 文件，AI 找到的问题将自动匹配是否违反企业内规
+            </div>
+            <div style="display:flex;gap:8px;width:100%;flex-wrap:wrap">
+              <button onclick="document.getElementById('corp-rules-input').click()"
+                style="flex:1;min-width:120px;height:40px;border-radius:10px;border:1.5px dashed var(--border);background:var(--surface);font-size:13px;font-weight:600;cursor:pointer;color:var(--primary)">
+                📂 本地 JSON 文件
+              </button>
+              <button onclick="loadCorpRulesFromServer()"
+                style="flex:1;min-width:120px;height:40px;border-radius:10px;border:1.5px dashed var(--primary);background:var(--primary-light);font-size:13px;font-weight:600;cursor:pointer;color:var(--primary)">
+                ☁️ 从服务器加载
+              </button>
+              <button onclick="clearCorpRules()"
+                style="height:40px;padding:0 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);font-size:13px;font-weight:600;cursor:pointer;color:var(--text-secondary)">
+                清除
+              </button>
+            </div>
+            <div style="font-size:11px;color:var(--text-hint);padding:2px 4px;line-height:1.5">
+              ☁️ 服务器加载：将 JSON 文件放入仓库 <code style="background:var(--bg);padding:1px 4px;border-radius:3px">corp-rules/</code> 目录，点击自动拉取
+            </div>
+            <div id="corp-rules-list" style="width:100%;display:none;flex-direction:column;gap:4px"></div>
+          </div>
+        </div>
+        <input type="file" id="corp-rules-input" accept=".json" multiple style="display:none" onchange="loadCorpRulesFiles(this.files)">
       </div>
     </div>
   </div>
@@ -445,6 +478,225 @@ const PROVIDERS = {
   'qwen-vl-max':   {url:'https://dashscope.aliyuncs.com/compatible-mode/v1',model:'qwen-vl-max'},
   'siliconflow':   {url:'https://api.siliconflow.cn/v1',model:'Qwen/Qwen2-VL-72B-Instruct'}
 };
+
+
+// =============================================
+// 企业内规库系统
+// =============================================
+
+// 存储已加载的企业规范条目
+// 格式: [{id, title, keywords, content, source}]
+let corpRulesDB = [];
+
+// 从 JSON 文件解析企业规范条目
+function parseCorpRulesJSON(json, filename) {
+  const entries = [];
+  const docTitle = json.meta?.title || filename;
+
+  function walkNode(node, parentTitle) {
+    // 只处理叶节点（children为空）或level>=2的条款
+    if (node.level >= 2 || (node.children && node.children.length === 0)) {
+      const keywords = [];
+
+      // 1. 从 keywords 字段提取
+      if (Array.isArray(node.keywords)) {
+        keywords.push(...node.keywords);
+      }
+
+      // 2. 从 content_chunk 自动提取关键词（提取2字以上汉字词组）
+      const text = node.content_chunk || node.title || '';
+      const autoKws = text.match(/[一-龥]{2,6}/g) || [];
+      // 过滤掉常见虚词
+      const stopWords = new Set(['施工现场','必须','禁止','不得','以上','以下','相关','实施','进行','使用','设置','安装','具有','规定','要求']);
+      autoKws.forEach(kw => { if(!stopWords.has(kw) && kw.length >= 2) keywords.push(kw); });
+
+      entries.push({
+        id: node.id,
+        title: node.title || '',
+        content: node.content_chunk || node.title || '',
+        keywords: [...new Set(keywords)], // 去重
+        source: docTitle,
+        docFile: filename
+      });
+    }
+
+    // 递归处理子节点
+    if (node.children && node.children.length > 0) {
+      node.children.forEach(child => walkNode(child, node.title));
+    }
+  }
+
+  // 处理 toc 结构
+  if (json.toc) {
+    json.toc.forEach(node => walkNode(node, ''));
+  }
+
+  return entries;
+}
+
+// 加载企业规范JSON文件（支持多文件）
+async function loadCorpRulesFiles(files) {
+  if (!files || !files.length) return;
+
+  for (const file of Array.from(files)) {
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      const entries = parseCorpRulesJSON(json, file.name);
+
+      // 去掉同文件名的旧数据再加入新数据
+      corpRulesDB = corpRulesDB.filter(e => e.docFile !== file.name);
+      corpRulesDB.push(...entries);
+
+      showToast(`✅ 已加载「${json.meta?.title || file.name}」${entries.length}条规定`);
+    } catch(e) {
+      showToast(`⚠️ 解析失败：${file.name}`);
+    }
+  }
+
+  saveCorpRulesToStorage();
+  renderCorpRulesList();
+}
+
+function clearCorpRules() {
+  if (!corpRulesDB.length) return;
+  if (!confirm('确定清除所有企业内规数据？')) return;
+  corpRulesDB = [];
+  saveCorpRulesToStorage();
+  renderCorpRulesList();
+  showToast('✓ 企业内规已清除');
+}
+
+// ── 从 GitHub Pages 服务器自动拉取 corp-rules/ 目录下所有 json ──
+// 使用方法：将规定 json 文件放入仓库 corp-rules/ 目录，
+//           并在 corp-rules/index.json 里列出文件名，例如：
+//           ["临时用电十条禁令.json","质量管理规定.json"]
+async function loadCorpRulesFromServer() {
+  const base = location.origin + location.pathname.replace(/\/[^/]*$/, '') + '/corp-rules/';
+  showToast('☁️ 正在从服务器拉取企业内规...');
+  try {
+    // 先拉取索引文件
+    const idxResp = await fetch(base + 'index.json?t=' + Date.now());
+    if (!idxResp.ok) throw new Error('未找到 corp-rules/index.json，请先创建索引文件');
+    const fileList = await idxResp.json();
+    if (!Array.isArray(fileList) || !fileList.length) throw new Error('index.json 为空或格式错误');
+
+    let loaded = 0;
+    for (const fname of fileList) {
+      try {
+        const resp = await fetch(base + encodeURIComponent(fname) + '?t=' + Date.now());
+        if (!resp.ok) { console.warn('跳过：', fname); continue; }
+        const json = await resp.json();
+        const entries = parseCorpRulesJSON(json, fname);
+        corpRulesDB = corpRulesDB.filter(e => e.docFile !== fname);
+        corpRulesDB.push(...entries);
+        loaded++;
+      } catch(e) { console.warn('解析失败：', fname, e); }
+    }
+
+    if (loaded === 0) throw new Error('所有文件均加载失败，请检查 corp-rules/ 目录');
+    saveCorpRulesToStorage();
+    renderCorpRulesList();
+    showToast(`✅ 已从服务器加载 ${loaded} 个规范文件`);
+  } catch(e) {
+    showToast('⚠️ ' + e.message);
+    console.error('服务器规范加载失败:', e);
+  }
+}
+
+function saveCorpRulesToStorage() {
+  try { localStorage.setItem('corp_rules_db', JSON.stringify(corpRulesDB)); } catch(e) {}
+}
+
+function loadCorpRulesFromStorage() {
+  try {
+    const s = localStorage.getItem('corp_rules_db');
+    if (s) { corpRulesDB = JSON.parse(s); renderCorpRulesList(); }
+  } catch(e) {}
+}
+
+function renderCorpRulesList() {
+  const badge = document.getElementById('corp-rules-badge');
+  const list = document.getElementById('corp-rules-list');
+  if (!badge || !list) return;
+
+  if (!corpRulesDB.length) {
+    badge.textContent = '未加载';
+    badge.style.background = 'var(--surface2)';
+    badge.style.color = 'var(--text-hint)';
+    badge.style.borderColor = 'var(--border)';
+    list.style.display = 'none';
+    return;
+  }
+
+  // 统计各文件条数
+  const fileMap = {};
+  corpRulesDB.forEach(e => {
+    fileMap[e.source] = (fileMap[e.source] || 0) + 1;
+  });
+
+  badge.textContent = `${corpRulesDB.length}条规定`;
+  badge.style.background = '#DEF7EC';
+  badge.style.color = '#057A55';
+  badge.style.borderColor = '#057A55';
+
+  list.style.display = 'flex';
+  list.innerHTML = Object.entries(fileMap).map(([src, cnt]) =>
+    `<div style="font-size:11px;color:var(--text-secondary);background:var(--surface2);
+      padding:4px 8px;border-radius:6px;border:1px solid var(--border)">
+      📋 ${escHtml(src)} · ${cnt}条
+    </div>`
+  ).join('');
+}
+
+// ── 核心匹配函数：判断一条问题是否违反企业内规 ──
+// 返回匹配到的规定列表（空数组=无违反）
+function matchCorpRules(issue) {
+  if (!corpRulesDB.length || !issue) return [];
+
+  const issueText = (issue.issue || '') + (issue.correction || '') + (issue.category || '');
+  const issueNorm = issueText.replace(/\s/g, '');
+
+  const matched = [];
+
+  for (const rule of corpRulesDB) {
+    let score = 0;
+    const hitKws = [];
+
+    // 关键词命中计分
+    for (const kw of rule.keywords) {
+      if (kw.length >= 2 && issueNorm.includes(kw)) {
+        score += kw.length; // 长关键词权重更高
+        hitKws.push(kw);
+      }
+    }
+
+    // 分数阈值：至少命中2个字符权重
+    if (score >= 4 && hitKws.length >= 1) {
+      matched.push({
+        id: rule.id,
+        title: rule.title,
+        content: rule.content,
+        source: rule.source,
+        hitKeywords: [...new Set(hitKws)],
+        score
+      });
+    }
+  }
+
+  // 按匹配分数排序，取最相关的前3条
+  matched.sort((a, b) => b.score - a.score);
+  return matched.slice(0, 3);
+}
+
+// 对一批问题批量打上企业内规标注
+function annotateWithCorpRules(issues) {
+  if (!corpRulesDB.length) return issues;
+  return issues.map(issue => ({
+    ...issue,
+    _corpViolations: matchCorpRules(issue)
+  }));
+}
 
 const RISK_STYLE = {
   '严重安全隐患':{bg:'#FDE8E8',border:'#E02424',icon:'🔴',priority:0},
@@ -929,6 +1181,7 @@ function loadConfig() {
   try{const s=localStorage.getItem('sc_cfg');if(s) config=JSON.parse(s);}catch(e){}
   document.getElementById('s-apikey').value=config.api_key||'';
   document.getElementById('s-provider').value=config.provider||'qwen-vl-max';
+  loadCorpRulesFromStorage(); // 恢复企业内规库
 }
 function saveSettings() {
   config.api_key=document.getElementById('s-apikey').value.trim();
@@ -957,56 +1210,76 @@ function pickFiles(src){
 
 /* ===== V4 企业级图片处理架构 ===== */
 
-const MAX_IMG_MB = 10;
-const MAX_DIMENSION = 2000;
+// API实际限制：阿里百炼/硅基流动 base64图片上限约4MB
+// 原图超过约3MB就会触发压缩，超过限制会导致API静默失败（返回空结果）
+const MAX_IMG_MB = 4;        // API可接受的最大图片体积（MB）
+const MAX_DIMENSION = 1600;  // 最大边长（降低token消耗，提升识别率）
 const MAX_TASK = 20;
-const AI_CONCURRENCY = 3;
-
-let runningAI = 0;
-const aiQueue = [];
+// AI_CONCURRENCY 已由新队列系统 AI_MAX_CONCURRENCY=2 接管
 
 async function compressImage(file){
   const maxSize = MAX_IMG_MB * 1024 * 1024;
-  if(file.size <= maxSize) return file;
 
-  showToast(`图片 ${file.name} 超过10MB，正在压缩...`);
+  showToast(`图片正在处理压缩，请稍候...`);
 
-  return new Promise(resolve=>{
+  return new Promise((resolve, reject)=>{
     const reader = new FileReader();
-    const img = new Image();
 
-    reader.onload = e => img.src = e.target.result;
+    reader.onerror = () => {
+      showToast('⚠️ 图片读取失败，请重试');
+      reject(new Error('FileReader error'));
+    };
 
-    img.onload = ()=>{
-      let w = img.width;
-      let h = img.height;
+    reader.onload = e => {
+      const img = new Image();
 
-      if(w > MAX_DIMENSION || h > MAX_DIMENSION){
-        const ratio = Math.min(MAX_DIMENSION/w, MAX_DIMENSION/h);
-        w *= ratio;
-        h *= ratio;
-      }
+      img.onerror = () => {
+        showToast('⚠️ 图片解码失败，请使用JPG/PNG格式');
+        reject(new Error('Image decode error'));
+      };
 
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      canvas.width = w;
-      canvas.height = h;
+      img.onload = () => {
+        let w = img.width;
+        let h = img.height;
 
-      ctx.drawImage(img,0,0,w,h);
+        // 等比缩放到最大边长限制内
+        if(w > MAX_DIMENSION || h > MAX_DIMENSION){
+          const ratio = Math.min(MAX_DIMENSION / w, MAX_DIMENSION / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
 
-      let quality = 0.9;
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(img, 0, 0, w, h);
 
-      function loop(){
-        canvas.toBlob(blob=>{
-          if(blob.size <= maxSize || quality <= 0.4){
-            resolve(new File([blob], file.name, {type:'image/jpeg'}));
-          }else{
-            quality -= 0.1;
-            loop();
-          }
-        }, 'image/jpeg', quality);
-      }
-      loop();
+        // 从quality=0.85开始逐步降低，直到体积达标
+        let quality = 0.85;
+
+        function loop(){
+          canvas.toBlob(blob => {
+            if(!blob){
+              showToast('⚠️ 压缩失败，尝试使用原图');
+              resolve(file);
+              return;
+            }
+            if(blob.size <= maxSize || quality < 0.3){
+              const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {type:'image/jpeg'});
+              const savedMB = ((file.size - blob.size)/1024/1024).toFixed(1);
+              showToast(`✓ 压缩完成，节省 ${savedMB}MB`);
+              resolve(compressed);
+            } else {
+              quality = Math.round((quality - 0.1) * 10) / 10;
+              loop();
+            }
+          }, 'image/jpeg', quality);
+        }
+        loop();
+      };
+
+      img.src = e.target.result;
     };
 
     reader.readAsDataURL(file);
@@ -1014,11 +1287,16 @@ async function compressImage(file){
 }
 
 async function processFile(file){
-
   let f = file;
 
-  if(file.size > MAX_IMG_MB*1024*1024){
-    f = await compressImage(file);
+  // 只要超过 MAX_IMG_MB 就压缩
+  if(file.size > MAX_IMG_MB * 1024 * 1024){
+    try {
+      f = await compressImage(file);
+    } catch(e) {
+      console.warn('压缩失败，使用原文件:', e);
+      f = file;
+    }
   }
 
   return new Promise(resolve=>{
@@ -1055,7 +1333,13 @@ async function handleFiles(files){
     const task = await processFile(fileList[i]);
 
     tasks.push(task);
-    addTaskRow(task); setTimeout(()=>{const r=document.querySelector(`[data-id="${task.id}"] img`); if(r){r.style.cursor='zoom-in'; r.onclick=()=>previewImage(task.dataUrl,task.name);} },0);
+    addTaskRow(task);
+    // 图片预览：用 row id 精确绑定，避免 data-id 选择器失效
+    const thumbImg = document.querySelector('#row-'+task.id+' .task-thumb');
+    if(thumbImg){
+      thumbImg.style.cursor='zoom-in';
+      thumbImg.onclick = e => { e.stopPropagation(); previewImage(task.dataUrl, task.name); };
+    }
     updateCount();
 
     setProgress(Math.floor((i+1)/fileList.length*100),true);
@@ -1086,42 +1370,95 @@ if(app){
 
 
 /* ===== V5 图片预览 ===== */
-function previewImage(dataUrl,name){
-  let modal=document.getElementById('img-preview-modal');
-  if(!modal){
-    modal=document.createElement('div');
-    modal.id='img-preview-modal';
-    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:9999';
-    modal.innerHTML='<div style="position:absolute;top:20px;right:20px;color:#fff;font-size:18px;cursor:pointer" onclick="this.parentNode.remove()">✕</div><img id="preview-img" style="max-width:95%;max-height:95%;border-radius:8px">';
-    document.body.appendChild(modal);
-  }
-  modal.querySelector('#preview-img').src=dataUrl;
+function previewImage(dataUrl, name){
+  // 每次重建，避免旧 src 残留导致显示错误
+  const old = document.getElementById('img-preview-modal');
+  if(old) old.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'img-preview-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out';
+  modal.onclick = () => modal.remove(); // 点击背景关闭
+
+  const img = document.createElement('img');
+  img.src = dataUrl;
+  img.alt = name || '';
+  img.style.cssText = 'max-width:95%;max-height:90vh;border-radius:8px;cursor:default;box-shadow:0 8px 32px rgba(0,0,0,.5)';
+  img.onclick = e => e.stopPropagation(); // 点图片本身不关闭
+
+  const closeBtn = document.createElement('div');
+  closeBtn.textContent = '✕';
+  closeBtn.style.cssText = 'position:absolute;top:20px;right:20px;color:#fff;font-size:22px;cursor:pointer;background:rgba(0,0,0,.4);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;';
+  closeBtn.onclick = () => modal.remove();
+
+  modal.appendChild(img);
+  modal.appendChild(closeBtn);
+  document.body.appendChild(modal);
 }
 
-/* ===== AI任务队列 ===== */
+/* ═══════════════════════════════════════════════════
+   AI 并发队列 v2  (FIFO · 最大并发2 · 失败重试2次)
+   ═══════════════════════════════════════════════════ */
 
-function pushAITask(fn){
-  aiQueue.push(fn);
-  runAIQueue();
+const AI_MAX_CONCURRENCY = 2;   // 最大并发数
+const AI_MAX_RETRY       = 2;   // 失败最大重试次数
+const AI_TIMEOUT_MS      = 90000; // 单次 API 超时 90s
+
+let _aiRunning = 0;              // 当前运行中的任务数
+const _aiQueue  = [];            // FIFO 队列，存 {fn, resolve, reject, retries}
+
+/** 将一个 async 任务加入 FIFO 队列，返回 Promise */
+function enqueueAI(fn) {
+  return new Promise((resolve, reject) => {
+    _aiQueue.push({ fn, resolve, reject, retries: 0 });
+    _drainAIQueue();
+  });
 }
 
-async function runAIQueue(){
-
-  if(runningAI >= AI_CONCURRENCY) return;
-  if(aiQueue.length===0) return;
-
-  const job = aiQueue.shift();
-  runningAI++;
-
-  try{
-    await job();
-  }catch(e){
-    console.error(e);
+/** 内部：尽可能消耗队列 */
+function _drainAIQueue() {
+  while (_aiRunning < AI_MAX_CONCURRENCY && _aiQueue.length > 0) {
+    const job = _aiQueue.shift();
+    _aiRunning++;
+    _runAIJob(job);
   }
+}
 
-  runningAI--;
+async function _runAIJob(job) {
+  try {
+    const result = await job.fn();
+    job.resolve(result);
+  } catch (err) {
+    if (job.retries < AI_MAX_RETRY) {
+      job.retries++;
+      const delay = 1000 * job.retries; // 递增等待：1s / 2s
+      console.warn(`AI任务失败，${delay/1000}s后重试(${job.retries}/${AI_MAX_RETRY})`, err.message);
+      setTimeout(() => {
+        _aiQueue.unshift(job); // 重试插回队首（优先级高）
+        _aiRunning--;
+        _drainAIQueue();
+      }, delay);
+      return; // 不走下面的 _aiRunning-- 和 _drainAIQueue
+    }
+    job.reject(err);
+  }
+  _aiRunning--;
+  _drainAIQueue();
+}
 
-  runAIQueue();
+/** 带超时的 fetch wrapper，超时抛出 Error */
+async function fetchWithTimeout(url, options, ms = AI_TIMEOUT_MS) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const resp = await fetch(url, { ...options, signal: ctrl.signal });
+    return resp;
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error(`请求超时(>${ms/1000}s)，请检查网络或缩小图片`);
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 
@@ -1152,7 +1489,7 @@ function addTaskRow(task){
 function updateTaskStatus(id,status,detail){
   const el=document.getElementById('status-'+id),dot=document.getElementById('dot-'+id);
   if(!el) return;
-  const map={waiting:['⏳','#9CA3AF','等待中'],analyzing:['🔄','#1A56DB',detail||'分析中'],done:['✅','#057A55',detail||'完成'],error:['❌','#E02424',detail||'失败']};
+  const map={waiting:['⏳','#9CA3AF','等待中'],queued:['🕐','#6B7280','队列中'],analyzing:['🔄','#1A56DB',detail||'分析中'],done:['✅','#057A55',detail||'完成'],error:['❌','#E02424',detail||'失败']};
   const [icon,color,text]=map[status]||map.waiting;
   if(dot) dot.textContent=icon;
   el.textContent=text;el.style.color=color;
@@ -1160,12 +1497,18 @@ function updateTaskStatus(id,status,detail){
 
 async function startAnalysis(){
   if(!config.api_key){showToast('⚠️ 请先在设置中配置 API Key');setTimeout(()=>switchTab(3),600);return;}
-  const waiting=tasks.filter(t=>['waiting','ready','error'].includes(t.status));
+  // 'ready' 状态已移除；只取 waiting / error 状态的任务
+  const waiting=tasks.filter(t=>t.status==='waiting'||t.status==='error');
   if(!waiting.length){showToast('没有待分析的图片');return;}
-  totalAnalyzing=waiting.length;doneAnalyzing=0;
-  setProgress(0,true);setStatus(`正在分析${waiting.length}张...`);
+  totalAnalyzing=waiting.length; doneAnalyzing=0;
+  setProgress(0,true); setStatus(`排队分析 ${waiting.length} 张...`);
   const promptMode=document.getElementById('prompt-select').value;
-  waiting.forEach(task=>{task.status='analyzing';updateTaskStatus(task.id,'analyzing');analyzeTask(task,promptMode);});
+  // 通过 enqueueAI 入 FIFO 队列，自动并发控制 + 重试
+  waiting.forEach(task=>{
+    task.status='analyzing';
+    updateTaskStatus(task.id,'analyzing','⏳ 排队中...');
+    enqueueAI(()=>analyzeTask(task,promptMode));
+  });
 }
 
 async function analyzeTask(task, promptMode){
@@ -1194,22 +1537,30 @@ async function analyzeTask(task, promptMode){
       allRawIssues.push(...parseIssues(resp,role));
     }
 
-    task.data=deduplicateIssues(allRawIssues);
+    const deduped = deduplicateIssues(allRawIssues);
+    task.data = annotateWithCorpRules(deduped); // 企业内规匹配
     task.status='done';
     const cnt=task.data.length;
     updateTaskStatus(task.id,'done',cnt?`发现${cnt}个问题`:'未发现问题');
-  }catch(err){
-    task.status='error';task.error=err.message||'网络错误';
-    updateTaskStatus(task.id,'error',task.error.slice(0,30));
+  } catch(err) {
+    task.status = 'error';
+    task.error  = err.message || '网络错误';
+    updateTaskStatus(task.id, 'error', task.error.slice(0, 40));
   }
-  if(currentDetailTask?.id===task.id) renderDetailContent(task);
+  if(currentDetailTask?.id === task.id) renderDetailContent(task);
   doneAnalyzing++;
-  setProgress(Math.round(doneAnalyzing/totalAnalyzing*100),true);
-  if(doneAnalyzing>=totalAnalyzing){
-    setProgress(100,false);
-    const total=tasks.reduce((s,t)=>s+(t.data?.length||0),0);
-    setStatus(`分析完成，共${total}个问题`);
-    showToast(`✅ 分析完成！发现${total}个问题`);
+  setProgress(Math.round(doneAnalyzing / totalAnalyzing * 100), true);
+  if(doneAnalyzing >= totalAnalyzing){
+    setProgress(100, false);
+    const total   = tasks.reduce((s,t) => s + (t.data?.length||0), 0);
+    const errored = tasks.filter(t => t.status === 'error').length;
+    if(errored > 0){
+      setStatus(`完成，${total}个问题，${errored}张失败`);
+      showToast(`⚠️ ${errored}张分析失败，可重新点击分析`);
+    } else {
+      setStatus(`分析完成，共${total}个问题`);
+      showToast(`✅ 分析完成！发现${total}个问题`);
+    }
   }
 }
 
@@ -1383,39 +1734,80 @@ function deduplicateIssues(issues) {
   return result;
 }
 
-async function callAI(preset,system,user,b64,temp=0.3,maxTokens=2048){
-  const resp=await fetch(`${preset.url}/chat/completions`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.api_key}`},
-    body:JSON.stringify({
-      model:preset.model,temperature:temp,max_tokens:maxTokens,
-      messages:[
-        {role:'system',content:system},
-        {role:'user',content:[
-          {type:'image_url',image_url:{url:`data:image/jpeg;base64,${b64}`}},
-          {type:'text',text:user}
+async function callAI(preset, system, user, b64, temp=0.3, maxTokens=2048){
+  // 二次校验：base64 字节数 ≈ 原始字节 * 4/3
+  // API 实际限制约 4MB，base64 对应约 5.3MB 字符串
+  const B64_LIMIT = 5.5 * 1024 * 1024; // 5.5MB 字符数
+  if (b64 && b64.length > B64_LIMIT) {
+    throw new Error(`图片 base64 过大(${(b64.length/1024/1024).toFixed(1)}MB)，请先压缩图片`);
+  }
+
+  const resp = await fetchWithTimeout(`${preset.url}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.api_key}`
+    },
+    body: JSON.stringify({
+      model: preset.model, temperature: temp, max_tokens: maxTokens,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: [
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${b64}` } },
+          { type: 'text', text: user }
         ]}
       ]
     })
   });
-  if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${resp.status}`);}
-  const data=await resp.json();
-  return data.choices?.[0]?.message?.content||'';
+
+  if (!resp.ok) {
+    const e = await resp.json().catch(() => ({}));
+    throw new Error(e.error?.message || `HTTP ${resp.status}`);
+  }
+  const data = await resp.json();
+  return data.choices?.[0]?.message?.content || '';
 }
 function parseRoles(text){
   try{const m=text.match(/\[.*?\]/s);if(m) return JSON.parse(m[0]);}catch(e){}
   return[];
 }
-function parseIssues(text,role){
-  try{
-    const clean=text.replace(/```json|```/g,'').trim();
-    const s=clean.indexOf('['),e=clean.lastIndexOf(']')+1;
-    if(s!==-1&&e>0){
-      const arr=JSON.parse(clean.slice(s,e));
-      return arr.filter(x=>typeof x==='object'&&x.issue).map(x=>({...x,category:role}));
+function parseIssues(text, role){
+  if(!text) return [];
+  // 策略1：去掉代码块标记后找最外层JSON数组
+  try {
+    const clean = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+    const s = clean.indexOf('[');
+    const e = clean.lastIndexOf(']') + 1;
+    if(s !== -1 && e > s){
+      const arr = JSON.parse(clean.slice(s, e));
+      if(Array.isArray(arr)){
+        return arr.filter(x => x && typeof x === 'object' && x.issue)
+                  .map(x => ({...x, category: role}));
+      }
     }
-  }catch(e){}
-  return[];
+  } catch(err1){}
+  // 策略2：逐个提取{...}对象（应对AI输出多个独立JSON对象的情况）
+  try {
+    const objs = [];
+    let depth = 0, start = -1;
+    for(let i = 0; i < text.length; i++){
+      if(text[i] === '{'){
+        if(depth === 0) start = i;
+        depth++;
+      } else if(text[i] === '}'){
+        depth--;
+        if(depth === 0 && start !== -1){
+          try {
+            const obj = JSON.parse(text.slice(start, i+1));
+            if(obj && obj.issue) objs.push({...obj, category: role});
+          } catch(e2){}
+          start = -1;
+        }
+      }
+    }
+    if(objs.length) return objs;
+  } catch(err2){}
+  return [];
 }
 
 let zoomLevel=1,zoomPanX=0,zoomPanY=0,isPanning=false,pinchDist=0;
@@ -1618,6 +2010,12 @@ function buildRiskCard(item,index,taskId){
     </div>
     <div class="card-issue">${escHtml(issueShort)}</div>
     <div class="card-hint">💬 点击查看详情</div>
+    ${(item._corpViolations && item._corpViolations.length) ? `
+    <div style="margin-top:6px;padding:5px 8px;background:rgba(220,38,38,0.08);border-left:3px solid #DC2626;border-radius:0 6px 6px 0;display:flex;align-items:center;gap:6px">
+      <span style="font-size:13px">🏢</span>
+      <span style="font-size:11px;font-weight:700;color:#DC2626">违反企业内规</span>
+      <span style="font-size:11px;color:#DC2626;opacity:.8">${item._corpViolations.map(v=>v.id+'条').join('、')}</span>
+    </div>` : ''}
     ${item.regulation||item.correction?'<hr class="card-divider">':''}
     <div class="card-footer">
       <div style="display:flex;gap:8px">${item.regulation?'<span style="font-size:11px;color:var(--text-hint)">📋 有规范依据</span>':''}${item.correction?'<span style="font-size:11px;color:var(--text-hint)">✅ 有整改措施</span>':''}</div>
@@ -1661,7 +2059,8 @@ function deleteIssue(item,taskId){
 function copyIssue(item){
   const experts = item._experts && item._experts.length > 0 ? item._experts : (item.category ? [item.category] : []);
   const expertLabel = experts.length > 1 ? `${experts.join('、')}（${experts.length}专家共同确认）` : (experts[0] || '—');
-  const text=`【${item.risk_level}】\n专业来源：${expertLabel}\n${item.issue}\n\n📋 规范依据：${item.regulation||'—'}\n✅ 整改措施：${item.correction||'—'}`;
+  const corpLines = (item._corpViolations||[]).map(v=>`   🏢 违反企业内规 ${v.id}：${v.content.slice(0,50)}...`).join('\n');
+  const text=`【${item.risk_level}】\n专业来源：${expertLabel}\n${item.issue}\n\n📋 规范依据：${item.regulation||'—'}\n✅ 整改措施：${item.correction||'—'}${corpLines?'\n\n'+corpLines:''}`;
   copyText(text);showToast('✓ 已复制');
 }
 function showIssueDetail(item){
@@ -1680,10 +2079,29 @@ function showIssueDetail(item){
   const multiNote = experts.length > 1
     ? `<div style="background:linear-gradient(90deg,rgba(124,58,237,0.1),rgba(29,78,216,0.1));border:1px solid #7C3AED;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#5B21B6;">🔁 该问题由 <strong>${experts.join('、')}</strong> 共 ${experts.length} 位专家共同识别，置信度更高</div>`
     : '';
+  // 企业内规违反详情
+  const corpViolations = item._corpViolations || [];
+  const corpHTML = corpViolations.length > 0 ? `
+    <div style="background:#FEF2F2;border:1.5px solid #DC2626;border-radius:10px;padding:12px;margin-bottom:10px">
+      <div style="font-size:13px;font-weight:700;color:#DC2626;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+        🏢 违反企业内部规定（${corpViolations.length}条）
+      </div>
+      ${corpViolations.map(v => `
+        <div style="margin-bottom:8px;padding:8px;background:#fff;border-radius:8px;border:1px solid rgba(220,38,38,0.2)">
+          <div style="font-size:11px;font-weight:700;color:#DC2626;margin-bottom:4px">${escHtml(v.id)} · ${escHtml(v.source)}</div>
+          <div style="font-size:12px;color:#374151;line-height:1.6">${escHtml(v.content)}</div>
+          <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">
+            ${v.hitKeywords.map(kw => `<span style="font-size:10px;background:#FEE2E2;color:#DC2626;padding:1px 6px;border-radius:4px">${escHtml(kw)}</span>`).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>` : '';
+
   document.getElementById('modal-detail-content').innerHTML=`
     <div style="background:${st.border};color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:700;margin-bottom:14px">${st.icon} ${item.risk_level}</div>
     ${multiNote}
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">${expertTagsHTML}</div>
+    ${corpHTML}
     <div class="detail-section"><div class="detail-section-title">📝 问题描述</div><div class="detail-section-body">${escHtml(item.issue||'')}</div></div>
     ${item.regulation?`<div class="detail-section"><div class="detail-section-title">📋 规范依据</div><div class="detail-section-body" style="color:var(--text-secondary)">${escHtml(item.regulation)}</div></div>`:''}
     ${item.correction?`<div class="detail-section"><div class="detail-section-title">✅ 整改措施</div><div class="detail-section-body" style="color:var(--success)">${escHtml(item.correction)}</div></div>`:''}`;
@@ -1700,7 +2118,8 @@ function copyAll(){
   sorted.forEach((iss,i)=>{
     const experts = iss._experts && iss._experts.length > 0 ? iss._experts : (iss.category ? [iss.category] : []);
     const expertLabel = experts.length > 1 ? `${experts.join('、')}（${experts.length}专家确认）` : (experts[0] || '—');
-    lines.push(`${i+1}. 【${iss.risk_level}】`,`   图片：${iss._src}`,`   专业：${expertLabel}`,`   [${iss.category}] ${iss.issue}`,`   📋 依据：${iss.regulation||'—'}`,`   ✅ 整改：${iss.correction||'—'}`,'');
+    const corpNote = (iss._corpViolations||[]).length ? `   🏢 违反企业内规：${(iss._corpViolations||[]).map(v=>v.id).join('、')}` : '';
+    lines.push(`${i+1}. 【${iss.risk_level}】`,`   图片：${iss._src}`,`   专业：${expertLabel}`,`   [${iss.category}] ${iss.issue}`,`   📋 依据：${iss.regulation||'—'}`,`   ✅ 整改：${iss.correction||'—'}`,...(corpNote?[corpNote]:[]),'');
   });
   copyText(lines.join('\n'));
   showToast(`✅ 已复制${allIssues.length}个问题`);
@@ -1750,7 +2169,10 @@ function escHtml(str){
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+// ServiceWorker 只在 HTTPS 或 localhost 环境注册，避免 file:// 报错
+if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  navigator.serviceWorker.register('./sw.js').catch(err => console.info('SW注册跳过:', err.message));
+}
 
 loadConfig();
 updateCount();
