@@ -365,6 +365,15 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
             <div style="font-size:11px;color:var(--text-hint);padding:2px 4px;line-height:1.5">
               ☁️ 服务器加载：将 JSON 文件放入仓库 <code style="background:var(--bg);padding:1px 4px;border-radius:3px">corp-rules/</code> 目录，点击自动拉取
             </div>
+            <div style="margin-top:8px;width:100%;padding:8px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+              <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:6px">🔗 云端服务器地址（可选）</div>
+              <input type="text" id="corp-server-url" placeholder="https://your-username.github.io/your-repo/"
+                style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:11px;background:var(--bg);outline:none;margin-bottom:6px"
+                onchange="saveCorpRulesServerUrl()">
+              <div style="font-size:10px;color:var(--text-hint);line-height:1.4">
+                💡 当通过 file:// 协议打开时，需要配置此项才能加载云端 JSON。保存后，HTML 文件会记住服务器地址。
+              </div>
+            </div>
             <div id="corp-rules-list" style="width:100%;display:none;flex-direction:column;gap:4px"></div>
           </div>
         </div>
@@ -572,35 +581,121 @@ function clearCorpRules() {
 //           并在 corp-rules/index.json 里列出文件名，例如：
 //           ["临时用电十条禁令.json","质量管理规定.json"]
 async function loadCorpRulesFromServer() {
-  const base = location.origin + location.pathname.replace(/\/[^/]*$/, '') + '/corp-rules/';
   showToast('☁️ 正在从服务器拉取企业内规...');
+  
+  // 计算基础 URL
+  let base;
+  if (location.protocol.startsWith('http')) {
+    // HTTP/HTTPS 环境下自动计算路径
+    const basePath = location.pathname.substring(0, location.pathname.lastIndexOf('/') + 1);
+    base = location.origin + basePath + 'corp-rules/';
+  } else {
+    // file:// 协议下使用配置的服务器地址
+    const configuredServer = localStorage.getItem('corp_rules_server_url');
+    if (!configuredServer) {
+      showToast('⚠️ 请在 HTTP/HTTPS 服务器或 GitHub Pages 上运行此功能');
+      console.warn('当前使用 file:// 协议，无法使用 fetch 加载云端 JSON');
+      console.info('部署方法：将 HTML 文件和 corp-rules/ 目录一起上传到 GitHub Pages 或其他 Web 服务器');
+      alert('提示：当前不在 Web 服务器上运行，无法直接加载云端 JSON。\n\n解决方法：\n1. 将 HTML 文件和 corp-rules/ 目录一起上传到 GitHub Pages\n2. 或者在浏览器控制台设置服务器地址：\n   localStorage.setItem("corp_rules_server_url", "https://your-username.github.io/your-repo/")');
+      return;
+    }
+    base = configuredServer.replace(/\/$/, '') + '/corp-rules/';
+  }
+  
+  if (!base || base === '/corp-rules/' || base.endsWith('undefined/corp-rules/')) {
+    showToast('⚠️ 无法确定服务器地址');
+    console.error('服务器地址无效:', base);
+    return;
+  }
+  
   try {
-    // 先拉取索引文件
-    const idxResp = await fetch(base + 'index.json?t=' + Date.now());
-    if (!idxResp.ok) throw new Error('未找到 corp-rules/index.json，请先创建索引文件');
-    const fileList = await idxResp.json();
-    if (!Array.isArray(fileList) || !fileList.length) throw new Error('index.json 为空或格式错误');
-
-    let loaded = 0;
-    for (const fname of fileList) {
-      try {
-        const resp = await fetch(base + encodeURIComponent(fname) + '?t=' + Date.now());
-        if (!resp.ok) { console.warn('跳过：', fname); continue; }
-        const json = await resp.json();
-        const entries = parseCorpRulesJSON(json, fname);
-        corpRulesDB = corpRulesDB.filter(e => e.docFile !== fname);
-        corpRulesDB.push(...entries);
-        loaded++;
-      } catch(e) { console.warn('解析失败：', fname, e); }
+    // 先拉取索引文件（添加时间戳防止缓存）
+    const cacheBuster = '?t=' + Date.now();
+    const idxUrl = base + 'index.json' + cacheBuster;
+    console.log('正在拉取索引文件:', idxUrl);
+    
+    let idxResp;
+    try {
+      idxResp = await fetch(idxUrl, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        mode: 'cors'
+      });
+    } catch (fetchErr) {
+      console.error('fetch 失败:', fetchErr);
+      throw new Error('网络错误：无法连接到服务器 ' + base + '\n请检查 CORS 设置或网络连接');
+    }
+    
+    if (!idxResp.ok) {
+      const statusText = idxResp.status === 404 
+        ? '未找到 corp-rules/index.json 文件'
+        : `HTTP ${idxResp.status}`;
+      throw new Error(statusText);
+    }
+    
+    let fileList;
+    try {
+      fileList = await idxResp.json();
+    } catch (jsonErr) {
+      throw new Error('index.json 格式错误：' + jsonErr.message);
+    }
+    
+    if (!Array.isArray(fileList) || !fileList.length) {
+      throw new Error('index.json 为空或格式错误，应为 JSON 数组，例如：["文件 1.json","文件 2.json"]');
     }
 
-    if (loaded === 0) throw new Error('所有文件均加载失败，请检查 corp-rules/ 目录');
+    let loaded = 0;
+    const total = fileList.length;
+    
+    for (const fname of fileList) {
+      try {
+        const fileUrl = base + encodeURIComponent(fname) + cacheBuster;
+        console.log(`拉取中 (${loaded + 1}/${total}):`, fname);
+        
+        const resp = await fetch(fileUrl, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' },
+          mode: 'cors'
+        });
+        
+        if (!resp.ok) { 
+          console.warn(`跳过 ${fname}: HTTP ${resp.status}`); 
+          continue; 
+        }
+        
+        const json = await resp.json();
+        const entries = parseCorpRulesJSON(json, fname);
+        
+        // 去掉同文件名的旧数据再加入新数据
+        corpRulesDB = corpRulesDB.filter(e => e.docFile !== fname);
+        corpRulesDB.push(...entries);
+        
+        loaded++;
+      } catch(e) { 
+        console.warn('解析失败：', fname, e); 
+      }
+    }
+
+    if (loaded === 0) {
+      throw new Error('所有文件均加载失败，请检查 corp-rules/ 目录及网络连接');
+    }
+    
     saveCorpRulesToStorage();
     renderCorpRulesList();
     showToast(`✅ 已从服务器加载 ${loaded} 个规范文件`);
+    
   } catch(e) {
     showToast('⚠️ ' + e.message);
     console.error('服务器规范加载失败:', e);
+    
+    // 提供详细的调试信息
+    console.group('❌ 加载失败调试信息');
+    console.log('基础 URL:', base);
+    console.log('当前协议:', location.protocol);
+    console.log('当前域名:', location.hostname);
+    console.log('当前路径:', location.pathname);
+    console.log('错误详情:', e);
+    console.groupEnd();
   }
 }
 
@@ -861,29 +956,44 @@ const REGULATION_DB = {
     anti_hallucination: 'BIM碰撞检测阶段标注不是实际碰撞；调试期间临时接线正常；设备就位前临时支撑不是支吊架不足。'
   },
   '水利': {
-    role_desc: '水利水电工程总工 | 30年大坝堤防渠道水闸施工经验',
-    scope: '围堰、大坝填筑、混凝土面板、溢洪道、水闸、渠道衬砌、压力钢管',
+    role_desc: '水利水电工程总工 | 30 年大坝堤防渠道水闸施工经验',
+    scope: '围堰、大坝填筑、混凝土面板、溢洪道、水闸、渠道衬砌、压力钢管、帷幕灌浆、高边坡开挖、水下作业',
     critical_hazards: [
       '【致命】围堰填筑未按方案分层碾压或防渗措施缺失',
       '【致命】帷幕灌浆压力超标导致地层抬动变形',
-      '混凝土面板堆石坝面板裂缝宽度超0.3mm未处理',
+      '【致命】高边坡开挖无支护或支护严重滞后',
+      '混凝土面板堆石坝面板裂缝宽度超 0.3mm 未处理',
       '大坝填筑料含水率超标或铺土过厚',
-      '溢洪道、消力池等泄洪建筑物混凝土蜂窝、孔洞'
+      '溢洪道、消力池等泄洪建筑物混凝土蜂窝、孔洞',
+      '压力钢管焊缝质量不合格或未做无损检测',
+      '水下作业无防护措施或潜水设备故障',
+      '隧洞进口高边坡失稳风险'
     ],
     checklist: [
       '【一眼识别】围堰施工：堰体分层填筑≤300mm，一次性填筑过高立即报告',
       '【一眼识别】大坝填筑：铺土均匀、碾压痕迹清晰，弹簧土立即停工',
       '【一眼识别】混凝土面板：无贯穿裂缝，接缝止水完好',
-      '【一眼识别】渠道衬砌：板厚均匀、伸缩缝填充饱满'
+      '【一眼识别】渠道衬砌：板厚均匀、伸缩缝填充饱满',
+      '【一眼识别】压力钢管：焊缝外观质量、防腐层完整性',
+      '【一眼识别】闸门安装：启闭机运行平稳、制动可靠',
+      '【工艺检查】土石方填筑：压实度、含水率检测记录',
+      '【工艺检查】混凝土浇筑：配合比、坍落度、振捣密实',
+      '【工艺检查】锚杆施工：长度、间距、注浆饱满度',
+      '【工艺检查】土工膜铺设：无破损、搭接宽度符合要求',
+      '【工艺检查】变形观测：沉降、位移监测点设置规范',
+      '【资料检查】原材料合格证、检测报告是否齐全'
     ],
     must_report_if: [
       '发现围堰渗漏、管涌、裂缝等险情',
       '发现大坝填筑料含水率过大或弹簧土',
       '发现混凝土结构有贯穿裂缝、蜂窝、孔洞',
-      '发现闸门启闭异常、制动失灵'
+      '发现闸门启闭异常、制动失灵',
+      '发现压力钢管焊缝裂纹、未熔合等缺陷',
+      '发现帷幕灌浆压力异常或地层抬动',
+      '发现监测数据超预警值未处理'
     ],
-    norms: `SL 631-2012《水利水电工程单元工程施工质量验收评定标准-土石方工程》\n第4.2.3条 土方填筑必须分层碾压，每层厚度不大于300mm，压实度符合设计要求。`,
-    anti_hallucination: '施工缝凿毛处理正常；临时排水沟不是永久排水；养护期混凝土表面湿润不是渗漏。'
+    norms: `SL 631-2012《水利水电工程单元工程施工质量验收评定标准 - 土石方工程》\n第 4.2.3 条 土方填筑必须分层碾压，每层厚度不大于 300mm，压实度符合设计要求。\nSL 714-2015《水利水电工程金属结构安装质量验收规范》\n第 3.2.1 条 压力钢管焊缝应进行外观检查和无损检测，质量等级符合设计要求。\nSL 632-2012《水利水电工程混凝土单元工程施工质量验收评定标准》\n第 5.1.2 条 混凝土浇筑应连续进行，振捣密实，不得出现蜂窝、孔洞等缺陷。`,
+    anti_hallucination: '施工缝凿毛处理正常；临时排水沟不是永久排水；养护期混凝土表面湿润不是渗漏；雨后坡面湿润不是渗水；局部出露岩石不是坡体失稳。'
   },
   '环保': {
     role_desc: '环境工程师 | 30年施工现场环保文明施工管理经验',
@@ -1182,12 +1292,28 @@ function loadConfig() {
   document.getElementById('s-apikey').value=config.api_key||'';
   document.getElementById('s-provider').value=config.provider||'qwen-vl-max';
   loadCorpRulesFromStorage(); // 恢复企业内规库
+  loadCorpRulesServerUrl(); // 恢复云端服务器地址
 }
-function saveSettings() {
-  config.api_key=document.getElementById('s-apikey').value.trim();
-  config.provider=document.getElementById('s-provider').value;
-  localStorage.setItem('sc_cfg', JSON.stringify(config));
-  showToast('✓ 设置已保存');
+
+function loadCorpRulesServerUrl() {
+  const url = localStorage.getItem('corp_rules_server_url');
+  if (url) {
+    const input = document.getElementById('corp-server-url');
+    if (input) input.value = url;
+  }
+}
+
+function saveCorpRulesServerUrl() {
+  const input = document.getElementById('corp-server-url');
+  if (!input) return;
+  const url = input.value.trim();
+  if (url) {
+    localStorage.setItem('corp_rules_server_url', url);
+    showToast('✓ 服务器地址已保存');
+  } else {
+    localStorage.removeItem('corp_rules_server_url');
+    showToast('✓ 已清除服务器地址');
+  }
 }
 
 function switchTab(idx) {
@@ -1299,15 +1425,24 @@ async function processFile(file){
     }
   }
 
-  return new Promise(resolve=>{
+  return new Promise((resolve, reject)=>{
     const reader = new FileReader();
-    reader.onload=e=>resolve({
-      id:`${Date.now()}_${Math.random()}`,
-      name:f.name,
-      dataUrl:e.target.result,
-      status:'waiting',
-      data:null
-    });
+    
+    reader.onerror = () => {
+      console.error('文件读取失败:', file.name);
+      reject(new Error('FileReader error'));
+    };
+    
+    reader.onload = e => {
+      resolve({
+        id:`${Date.now()}_${Math.random()}`,
+        name:f.name || file.name,
+        dataUrl:e.target.result,
+        status:'waiting',
+        data:null
+      });
+    };
+    
     reader.readAsDataURL(f);
   });
 }
@@ -1329,20 +1464,18 @@ async function handleFiles(files){
   setProgress(10,true);
 
   for(let i=0;i<fileList.length;i++){
+    try {
+      const task = await processFile(fileList[i]);
 
-    const task = await processFile(fileList[i]);
+      tasks.push(task);
+      addTaskRow(task);
+      updateCount();
 
-    tasks.push(task);
-    addTaskRow(task);
-    // 图片预览：用 row id 精确绑定，避免 data-id 选择器失效
-    const thumbImg = document.querySelector('#row-'+task.id+' .task-thumb');
-    if(thumbImg){
-      thumbImg.style.cursor='zoom-in';
-      thumbImg.onclick = e => { e.stopPropagation(); previewImage(task.dataUrl, task.name); };
+      setProgress(Math.floor((i+1)/fileList.length*100),true);
+    } catch(e) {
+      console.error('图片处理失败:', e);
+      showToast(`⚠️ 图片 ${fileList[i].name} 处理失败`);
     }
-    updateCount();
-
-    setProgress(Math.floor((i+1)/fileList.length*100),true);
   }
 
   setProgress(100,false);
@@ -1374,6 +1507,13 @@ function previewImage(dataUrl, name){
   // 每次重建，避免旧 src 残留导致显示错误
   const old = document.getElementById('img-preview-modal');
   if(old) old.remove();
+  
+  // 验证 dataUrl 是否有效
+  if(!dataUrl){
+    showToast('⚠️ 图片数据无效');
+    console.error('previewImage: dataUrl 为空');
+    return;
+  }
 
   const modal = document.createElement('div');
   modal.id = 'img-preview-modal';
@@ -1385,6 +1525,13 @@ function previewImage(dataUrl, name){
   img.alt = name || '';
   img.style.cssText = 'max-width:95%;max-height:90vh;border-radius:8px;cursor:default;box-shadow:0 8px 32px rgba(0,0,0,.5)';
   img.onclick = e => e.stopPropagation(); // 点图片本身不关闭
+  
+  // 添加加载错误处理
+  img.onerror = function(){
+    console.error('预览图片加载失败:', name);
+    showToast('⚠️ 图片加载失败');
+    modal.remove();
+  };
 
   const closeBtn = document.createElement('div');
   closeBtn.textContent = '✕';
@@ -1476,8 +1623,15 @@ function addTaskRow(task){
   row.className='task-row fade-in';
   row.id='row-'+task.id;
   row.onclick=()=>openDetail(task);
+
+  // 验证 dataUrl 是否有效
+  const thumbSrc = task.dataUrl || '';
+  if(!thumbSrc){
+    console.warn('任务图片 dataUrl 为空:', task.id);
+  }
+
   row.innerHTML=`
-    <img class="task-thumb" src="${task.dataUrl}" alt="">
+    <img class="task-thumb" src="${thumbSrc}" alt="" onerror="this.style.background='#fee';this.alt='加载失败'">
     <div class="task-info">
       <div class="task-name">${escHtml(task.name)}</div>
       <div class="task-status" id="status-${task.id}">⏳ 等待中</div>
@@ -1485,6 +1639,16 @@ function addTaskRow(task){
     <span class="task-dot" id="dot-${task.id}">⏳</span>
     <span class="task-arrow">›</span>`;
   list.appendChild(row);
+  
+  // 绑定图片点击事件（阻止冒泡）
+  const thumbImg = row.querySelector('.task-thumb');
+  if(thumbImg){
+    thumbImg.style.cursor = 'zoom-in';
+    thumbImg.onclick = function(e){
+      e.stopPropagation();
+      previewImage(task.dataUrl, task.name);
+    };
+  }
 }
 function updateTaskStatus(id,status,detail){
   const el=document.getElementById('status-'+id),dot=document.getElementById('dot-'+id);
@@ -1857,9 +2021,18 @@ function setupDetailZoom(){
 }
 
 function openFullscreen(){
-  const src=document.getElementById('detail-img').src;
-  if(!src||src==='') return;
-  document.getElementById('fs-img').src=src;
+  const detailImg = document.getElementById('detail-img');
+  const src = detailImg ? detailImg.src : '';
+  if(!src || src==='' || src===window.location.href){
+    showToast('⚠️ 图片不可用');
+    return;
+  }
+  const fsImg = document.getElementById('fs-img');
+  fsImg.src = src;
+  fsImg.onerror = function(){
+    console.error('全屏图片加载失败');
+    showToast('⚠️ 全屏图片加载失败');
+  };
   fsZoomLevel=1;fsPanX=0;fsPanY=0;applyFsZoom();
   document.getElementById('fullscreen-overlay').classList.add('open');
   document.body.style.overflow='hidden';
@@ -1904,7 +2077,25 @@ function setupFsZoom(){
 function openDetail(task){
   currentDetailTask=task;
   document.getElementById('detail-title').textContent='  '+task.name;
-  document.getElementById('detail-img').src=task.dataUrl||'';
+  
+  const detailImg = document.getElementById('detail-img');
+  const imgSrc = task.dataUrl || '';
+  
+  if(!imgSrc){
+    console.warn('详情页图片 dataUrl 为空:', task.id);
+    detailImg.src = '';
+    detailImg.alt = '图片加载失败';
+  } else {
+    detailImg.src = imgSrc;
+    detailImg.alt = task.name || '';
+    // 添加错误处理
+    detailImg.onerror = function(){
+      console.error('详情页图片加载失败:', task.name);
+      this.alt = '图片加载失败';
+      this.style.background = '#fee';
+    };
+  }
+  
   initZoom();
   ['view-home','view-summary','view-settings'].forEach(id=>document.getElementById(id).classList.remove('active'));
   document.getElementById('view-detail').classList.add('active');
