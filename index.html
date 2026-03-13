@@ -1395,7 +1395,7 @@ function pickFiles(src){
 
 // API实际限制：阿里百炼/硅基流动 base64图片上限约4MB
 // 原图超过约3MB就会触发压缩，超过限制会导致API静默失败（返回空结果）
-const MAX_IMG_MB = 4;        // API可接受的最大图片体积（MB）
+const MAX_IMG_MB = 8;        // API可接受的最大图片体积（MB）
 const MAX_DIMENSION = 1600;  // 最大边长（降低token消耗，提升识别率）
 const MAX_TASK = 20;
 // AI_CONCURRENCY 已由新队列系统 AI_MAX_CONCURRENCY=2 接管
