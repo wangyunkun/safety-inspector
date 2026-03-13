@@ -415,10 +415,10 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
     <div style="display:flex;flex-direction:column;gap:10px">
       <button style="height:52px;border-radius:12px;border:1.5px dashed var(--border);
         background:var(--surface);font-size:15px;font-weight:600;cursor:pointer"
-        onclick="pickFiles('camera');closeModal('modal-add')">📷 拍照</button>
+        onclick="closeModal('modal-add');setTimeout(()=>pickFiles('camera'),150)">📷 拍照</button>
       <button style="height:52px;border-radius:12px;border:1.5px dashed var(--border);
         background:var(--surface);font-size:15px;font-weight:600;cursor:pointer"
-        onclick="pickFiles('gallery');closeModal('modal-add')">🖼️ 从相册选择</button>
+        onclick="closeModal('modal-add');setTimeout(()=>pickFiles('gallery'),150)">🖼️ 从相册选择</button>
     </div>
   </div>
 </div>
@@ -1310,7 +1310,7 @@ async function processFile(file){
     const reader = new FileReader();
     reader.onerror = () => reject(new Error('文件读取失败：' + f.name));
     reader.onload=e=>resolve({
-      id:`${Date.now()}_${Math.random()}`,
+      id:`${Date.now()}_${Math.floor(Math.random()*1e9)}`,
       name:f.name,
       dataUrl:e.target.result,
       status:'waiting',
@@ -1341,8 +1341,9 @@ async function handleFiles(files){
       const task = await processFile(fileList[i]);
       tasks.push(task);
       addTaskRow(task);
-      // 图片预览：用 row id 精确绑定，避免 data-id 选择器失效
-      const thumbImg = document.querySelector('#row-'+task.id+' .task-thumb');
+      // 直接从 row 元素找 thumb，避免 querySelector 因 id 含特殊字符而失败
+      const row = document.getElementById('row-'+task.id);
+      const thumbImg = row && row.querySelector('.task-thumb');
       if(thumbImg){
         thumbImg.style.cursor='zoom-in';
         thumbImg.onclick = e => { e.stopPropagation(); previewImage(task.dataUrl, task.name); };
