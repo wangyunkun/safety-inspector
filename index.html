@@ -251,7 +251,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
   <!-- HOME VIEW -->
   <div class="view active" id="view-home">
     <div class="topbar">
-      <h1>🏗️ 安全质量助手V3.0</h1>
+      <h1>🏗️ 安全质量助手V4.0</h1>
       <span class="count-badge" id="count-badge">0/20</span>
     </div>
     <div class="scene-bar">
@@ -605,7 +605,8 @@ async function loadCorpRulesFromServer() {
 }
 
 function saveCorpRulesToStorage() {
-  try { localStorage.setItem('corp_rules_db', JSON.stringify(corpRulesDB)); } catch(e) {}
+  try { localStorage.setItem('corp_rules_db', JSON.stringify(corpRulesDB)); } 
+  catch(e) { showToast('⚠️ 规范库过大无法本地保存，本次会话仍有效'); }
 }
 
 function loadCorpRulesFromStorage() {
@@ -1182,7 +1183,6 @@ function loadConfig() {
   document.getElementById('s-apikey').value=config.api_key||'';
   document.getElementById('s-provider').value=config.provider||'qwen-vl-max';
   loadCorpRulesFromStorage(); // 恢复企业内规库
-  loadCorpRulesServerUrl();   // 恢复云端服务器地址
 }
 function saveSettings() {
   const key=document.getElementById('s-apikey').value.trim();
@@ -1195,23 +1195,6 @@ function saveSettings() {
   }catch(e){
     showToast('⚠️ 保存失败：'+e.message);
   }
-}
-// 云端企业内规服务器地址（存取）
-function loadCorpRulesServerUrl() {
-  try{
-    const url=localStorage.getItem('corp_rules_server_url');
-    const input=document.getElementById('corp-server-url');
-    if(url&&input) input.value=url;
-  }catch(e){}
-}
-function saveCorpRulesServerUrl() {
-  try{
-    const input=document.getElementById('corp-server-url');
-    if(!input) return;
-    const url=input.value.trim();
-    if(url){localStorage.setItem('corp_rules_server_url',url);showToast('✓ 服务器地址已保存');}
-    else{localStorage.removeItem('corp_rules_server_url');showToast('✓ 已清除服务器地址');}
-  }catch(e){}
 }
 
 function switchTab(idx) {
@@ -1323,8 +1306,9 @@ async function processFile(file){
     }
   }
 
-  return new Promise(resolve=>{
+  return new Promise((resolve, reject)=>{
     const reader = new FileReader();
+    reader.onerror = () => reject(new Error('文件读取失败：' + f.name));
     reader.onload=e=>resolve({
       id:`${Date.now()}_${Math.random()}`,
       name:f.name,
@@ -1353,19 +1337,21 @@ async function handleFiles(files){
   setProgress(10,true);
 
   for(let i=0;i<fileList.length;i++){
-
-    const task = await processFile(fileList[i]);
-
-    tasks.push(task);
-    addTaskRow(task);
-    // 图片预览：用 row id 精确绑定，避免 data-id 选择器失效
-    const thumbImg = document.querySelector('#row-'+task.id+' .task-thumb');
-    if(thumbImg){
-      thumbImg.style.cursor='zoom-in';
-      thumbImg.onclick = e => { e.stopPropagation(); previewImage(task.dataUrl, task.name); };
+    try{
+      const task = await processFile(fileList[i]);
+      tasks.push(task);
+      addTaskRow(task);
+      // 图片预览：用 row id 精确绑定，避免 data-id 选择器失效
+      const thumbImg = document.querySelector('#row-'+task.id+' .task-thumb');
+      if(thumbImg){
+        thumbImg.style.cursor='zoom-in';
+        thumbImg.onclick = e => { e.stopPropagation(); previewImage(task.dataUrl, task.name); };
+      }
+      updateCount();
+    }catch(e){
+      console.error('图片处理失败:', fileList[i].name, e);
+      showToast(`⚠️ ${fileList[i].name} 处理失败，已跳过`);
     }
-    updateCount();
-
     setProgress(Math.floor((i+1)/fileList.length*100),true);
   }
 
@@ -1531,7 +1517,23 @@ async function startAnalysis(){
   waiting.forEach(task=>{
     task.status='analyzing';
     updateTaskStatus(task.id,'analyzing','⏳ 排队中...');
-    enqueueAI(()=>analyzeTask(task,promptMode));
+    // doneAnalyzing 计数放在队列外层，无论成功/失败/重试只计一次
+    enqueueAI(()=>analyzeTask(task,promptMode)).finally(()=>{
+      doneAnalyzing++;
+      setProgress(Math.round(doneAnalyzing / totalAnalyzing * 100), true);
+      if(doneAnalyzing >= totalAnalyzing){
+        setProgress(100, false);
+        const total   = tasks.reduce((s,t) => s + (t.data?.length||0), 0);
+        const errored = tasks.filter(t => t.status === 'error').length;
+        if(errored > 0){
+          setStatus(`完成，${total}个问题，${errored}张失败`);
+          showToast(`⚠️ ${errored}张分析失败，可重新点击分析`);
+        } else {
+          setStatus(`分析完成，共${total}个问题`);
+          showToast(`✅ 分析完成！发现${total}个问题`);
+        }
+      }
+    });
   });
 }
 
@@ -1572,20 +1574,6 @@ async function analyzeTask(task, promptMode){
     updateTaskStatus(task.id, 'error', task.error.slice(0, 40));
   }
   if(currentDetailTask?.id === task.id) renderDetailContent(task);
-  doneAnalyzing++;
-  setProgress(Math.round(doneAnalyzing / totalAnalyzing * 100), true);
-  if(doneAnalyzing >= totalAnalyzing){
-    setProgress(100, false);
-    const total   = tasks.reduce((s,t) => s + (t.data?.length||0), 0);
-    const errored = tasks.filter(t => t.status === 'error').length;
-    if(errored > 0){
-      setStatus(`完成，${total}个问题，${errored}张失败`);
-      showToast(`⚠️ ${errored}张分析失败，可重新点击分析`);
-    } else {
-      setStatus(`分析完成，共${total}个问题`);
-      showToast(`✅ 分析完成！发现${total}个问题`);
-    }
-  }
 }
 
 // =============================================
@@ -1792,7 +1780,16 @@ async function callAI(preset, system, user, b64, temp=0.3, maxTokens=2048){
   return data.choices?.[0]?.message?.content || '';
 }
 function parseRoles(text){
-  try{const m=text.match(/\[.*?\]/s);if(m) return JSON.parse(m[0]);}catch(e){}
+  if(!text) return [];
+  // 去掉代码块标记，找最后一个 [...] 作为结果（跳过说明性的 [注] 等）
+  const clean = text.replace(/```[\s\S]*?```/g,'').replace(/`[^`]*`/g,'');
+  const matches = [...clean.matchAll(/\[[^\[\]]*\]/g)];
+  for(let i=matches.length-1;i>=0;i--){
+    try{
+      const arr=JSON.parse(matches[i][0]);
+      if(Array.isArray(arr) && arr.length>0 && typeof arr[0]==='string') return arr;
+    }catch(e){}
+  }
   return[];
 }
 function parseIssues(text, role){
@@ -1852,14 +1849,21 @@ function zoomOut(){zoomLevel=Math.max(zoomLevel-0.25,0.5);if(zoomLevel<=1){zoomP
 function setupDetailZoom(){
   const wrap=document.getElementById('detail-img-inner');
   if(!wrap) return;
-  wrap.addEventListener('touchstart',e=>{
+  // 防止重复注册：已绑定则先清除
+  if(wrap._zoomBound){
+    wrap.removeEventListener('touchstart', wrap._onTS);
+    wrap.removeEventListener('touchmove',  wrap._onTM);
+    wrap.removeEventListener('touchend',   wrap._onTE);
+  }
+  let lastTap=0;
+  wrap._onTS=e=>{
     if(e.touches.length===2){
       pinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
     }else if(e.touches.length===1&&zoomLevel>1){
       isPanning=true;panStartX=e.touches[0].clientX;panStartY=e.touches[0].clientY;panStartPX=zoomPanX;panStartPY=zoomPanY;
     }
-  },{passive:true});
-  wrap.addEventListener('touchmove',e=>{
+  };
+  wrap._onTM=e=>{
     if(e.touches.length===2){
       e.preventDefault();
       const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
@@ -1870,19 +1874,24 @@ function setupDetailZoom(){
       zoomPanY=panStartPY+(e.touches[0].clientY-panStartY);
       applyZoom();
     }
-  },{passive:false});
-  wrap.addEventListener('touchend',()=>{isPanning=false;});
-  let lastTap=0;
-  wrap.addEventListener('touchend',e=>{
+  };
+  wrap._onTE=e=>{
+    isPanning=false;
+    // 双击检测合并在同一个 touchend 处理器内
     const now=Date.now();
     if(now-lastTap<300){zoomLevel===1?zoomIn():initZoom();}
     lastTap=now;
-  });
+  };
+  wrap.addEventListener('touchstart', wrap._onTS, {passive:true});
+  wrap.addEventListener('touchmove',  wrap._onTM, {passive:false});
+  wrap.addEventListener('touchend',   wrap._onTE);
+  wrap._zoomBound=true;
 }
 
 function openFullscreen(){
   const src=document.getElementById('detail-img').src;
-  if(!src||src==='') return;
+  // 浏览器会把 src="" 补全为当前页 URL，需同时排除
+  if(!src || src==='' || src===window.location.href || src===window.location.origin+'/') return;
   document.getElementById('fs-img').src=src;
   fsZoomLevel=1;fsPanX=0;fsPanY=0;applyFsZoom();
   document.getElementById('fullscreen-overlay').classList.add('open');
@@ -2153,7 +2162,13 @@ function clearAll(){
   if(!tasks.length) return;
   if(!confirm('确定要清空所有图片吗？')) return;
   tasks=[];
+  // 同时清空 AI 队列，防止后台任务完成后弹出幽灵提示
+  _aiQueue.length=0;
+  _aiRunning=0;
+  doneAnalyzing=0;
+  totalAnalyzing=0;
   document.getElementById('task-list').innerHTML='';
+  setProgress(0,false);
   updateCount();setStatus('就绪');showToast('✓ 队列已清空');
 }
 
