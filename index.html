@@ -27,7 +27,8 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
   font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans CJK SC',sans-serif;
   color:var(--text-primary)}
 #app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;
-  background:var(--bg);box-shadow:0 0 40px rgba(0,0,0,.15);position:relative}
+  background:var(--bg);box-shadow:0 0 40px rgba(0,0,0,.15);position:relative;
+  padding-bottom:calc(56px + var(--safe-bottom))}
 
 /* TOPBAR */
 .topbar{background:var(--primary);padding:calc(var(--safe-top) + 12px) 16px 12px;
@@ -58,13 +59,15 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
 /* BOTTOM BAR */
 .bottom-bar{background:var(--surface);border-top:1px solid var(--border);
   padding:10px 12px calc(var(--safe-bottom) + 10px);display:flex;gap:10px;flex-shrink:0}
-.bottom-bar button{height:46px;border:none;border-radius:10px;
-  font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s}
+.bottom-bar button{height:44px;border:none;border-radius:10px;
+  font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s}
 .bottom-bar button:active{opacity:.85;transform:scale(.97)}
 .btn-clear{background:var(--surface2);color:var(--text-secondary);
   border:1.5px solid var(--border)!important;min-width:80px}
 .btn-copy-all{background:var(--success-light);color:var(--success);
-  border:1.5px solid var(--success)!important;min-width:100px}
+  border:1.5px solid var(--success)!important;min-width:80px}
+.btn-save-hist{background:#EDE9FE;color:#7C3AED;
+  border:1.5px solid #7C3AED!important;min-width:60px}
 .btn-analyze{background:var(--primary);color:#fff;flex:1;font-size:15px;font-weight:700;
   box-shadow:0 4px 14px rgba(26,86,219,.4)}
 .btn-copy-report{background:var(--primary);color:#fff;flex:1;font-size:15px;font-weight:700}
@@ -76,12 +79,14 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
 
 /* NAV */
 .navbar{background:var(--surface);border-top:1px solid var(--border);
-  display:flex;padding-bottom:var(--safe-bottom);flex-shrink:0}
-.nav-btn{flex:1;border:none;background:transparent;padding:8px 4px 6px;cursor:pointer;
-  display:flex;flex-direction:column;align-items:center;gap:2px;
-  font-size:10px;color:var(--text-hint);font-weight:500;transition:color .15s}
+  display:flex;padding-bottom:var(--safe-bottom);flex-shrink:0;
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:480px;z-index:100;height:calc(56px + var(--safe-bottom))}
+.nav-btn{flex:1;border:none;background:transparent;padding:6px 2px 5px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+  font-size:9px;color:var(--text-hint);font-weight:500;transition:color .15s}
 .nav-btn.active{color:var(--primary);font-weight:700}
-.nav-icon{font-size:22px;line-height:1}
+.nav-icon{font-size:20px;line-height:1}
 
 /* EMPTY STATE */
 .empty-state{display:flex;flex-direction:column;align-items:center;
@@ -237,6 +242,26 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
 
+/* RECT STATUS */
+.rect-status-bar{display:flex;gap:6px;margin-top:8px;align-items:center}
+.rect-btn{border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;opacity:.5}
+.rect-btn.active{opacity:1;transform:scale(1.05)}
+.rect-pending{background:#FEF3C7;color:#92400E}
+.rect-ongoing{background:#DBEAFE;color:#1E40AF}
+.rect-done{background:#D1FAE5;color:#065F46}
+
+/* HISTORY */
+.hist-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer;transition:transform .1s}
+.hist-card:active{transform:scale(.98)}
+.hist-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.hist-card-title{font-size:14px;font-weight:700;color:var(--text-primary)}
+.hist-card-time{font-size:11px;color:var(--text-hint)}
+.hist-card-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.hist-meta-badge{font-size:11px;padding:2px 8px;border-radius:6px;background:var(--surface2);color:var(--text-secondary);border:1px solid var(--border)}
+.hist-card-actions{display:flex;gap:8px;margin-top:10px}
+.hist-action-btn{flex:1;height:34px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface2);font-size:12px;font-weight:600;cursor:pointer;color:var(--text-secondary)}
+.hist-action-btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+
 /* ANIMATIONS */
 @keyframes fadeInUp{
   from{opacity:0;transform:translateY(12px)}
@@ -251,7 +276,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
   <!-- HOME VIEW -->
   <div class="view active" id="view-home">
     <div class="topbar">
-      <h1>🏗️ 安全质量助手V4.0</h1>
+      <h1>🏗️ 安全质量助手V4.5</h1>
       <span class="count-badge" id="count-badge">0/20</span>
     </div>
     <div class="scene-bar">
@@ -275,6 +300,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
     <div class="bottom-bar">
       <button class="btn-clear" onclick="clearAll()">🗑 清空</button>
       <button class="btn-copy-all" onclick="copyAll()">📋 快速复制</button>
+      <button class="btn-save-hist" onclick="saveSessionToHistory()">💾 存档</button>
       <button class="btn-analyze" onclick="startAnalysis()">▶ 开始分析</button>
     </div>
     <div class="status-bar" id="status-bar">就绪</div>
@@ -291,9 +317,14 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
 
   <!-- DETAIL VIEW -->
   <div class="view" id="view-detail">
-    <div class="topbar">
+    <div class="topbar" style="gap:0">
       <button class="btn-back" onclick="closeDetail()">‹ 返回</button>
-      <span class="topbar-title" id="detail-title"></span>
+      <span class="topbar-title" id="detail-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+      <div style="display:flex;align-items:center;gap:2px;flex-shrink:0">
+        <button id="detail-prev" onclick="detailNav(-1)" style="width:32px;height:32px;border:none;background:var(--surface2);border-radius:8px;font-size:16px;cursor:pointer;color:var(--text-primary)">‹</button>
+        <span id="detail-nav-label" style="font-size:12px;color:var(--text-secondary);min-width:32px;text-align:center"></span>
+        <button id="detail-next" onclick="detailNav(1)" style="width:32px;height:32px;border:none;background:var(--surface2);border-radius:8px;font-size:16px;cursor:pointer;color:var(--text-primary)">›</button>
+      </div>
     </div>
     <div class="detail-image-wrap" id="detail-image-wrap">
       <div class="detail-img-inner" id="detail-img-inner">
@@ -309,6 +340,12 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
     <div class="scroll-area">
       <div style="padding:12px" id="detail-content"></div>
     </div>
+  </div>
+
+  <!-- HISTORY VIEW -->
+  <div class="view" id="view-history">
+    <div class="topbar"><h1>🕘 历史记录</h1></div>
+    <div class="scroll-area"><div style="padding:14px" id="history-content"></div></div>
   </div>
 
   <!-- SETTINGS VIEW -->
@@ -383,6 +420,9 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
     </button>
     <button class="nav-btn" id="nav-add" onclick="showAddMenu()">
       <span class="nav-icon">➕</span>添加
+    </button>
+    <button class="nav-btn" id="nav-history" onclick="switchTab(4)">
+      <span class="nav-icon">🕘</span>历史
     </button>
     <button class="nav-btn" id="nav-settings" onclick="switchTab(3)">
       <span class="nav-icon">⚙️</span>设置
@@ -1178,6 +1218,139 @@ let currentTab = 0, currentDetailTask = null;
 let editingItem = null, editingTaskId = null;
 let totalAnalyzing = 0, doneAnalyzing = 0;
 
+// =============================================
+// IndexedDB 历史记录系统
+// =============================================
+let _db = null;
+function openDB(){
+  return new Promise((res,rej)=>{
+    if(_db){res(_db);return;}
+    const req=indexedDB.open('sc_history',1);
+    req.onupgradeneeded=e=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains('sessions')){
+        const store=db.createObjectStore('sessions',{keyPath:'id'});
+        store.createIndex('createdAt','createdAt');
+      }
+    };
+    req.onsuccess=e=>{_db=e.target.result;res(_db);};
+    req.onerror=()=>rej(req.error);
+  });
+}
+async function saveSessionToHistory(label){
+  const doneTasks=tasks.filter(t=>t.status==='done');
+  if(!doneTasks.length) return;
+  try{
+    const db=await openDB();
+    const session={
+      id:Date.now()+'',
+      label:label||`巡检 ${new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}`,
+      createdAt:Date.now(),
+      taskCount:doneTasks.length,
+      issueCount:doneTasks.reduce((s,t)=>s+(t.data?.length||0),0),
+      tasks: doneTasks.map(t=>({
+        id:t.id, name:t.name,
+        dataUrl:t.dataUrl,   // 缩略图也存，方便回显
+        status:t.status,
+        data: (t.data||[]).map(iss=>({...iss}))
+      }))
+    };
+    const tx=db.transaction('sessions','readwrite');
+    tx.objectStore('sessions').put(session);
+    await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});
+    showToast('✅ 已保存到历史记录');
+  }catch(e){console.error('历史记录保存失败',e);}
+}
+async function loadAllSessions(){
+  try{
+    const db=await openDB();
+    return new Promise((res,rej)=>{
+      const tx=db.transaction('sessions','readonly');
+      const req=tx.objectStore('sessions').index('createdAt').getAll();
+      req.onsuccess=()=>res([...(req.result||[])].reverse());
+      req.onerror=()=>rej(req.error);
+    });
+  }catch(e){return [];}
+}
+async function deleteSession(id){
+  try{
+    const db=await openDB();
+    const tx=db.transaction('sessions','readwrite');
+    tx.objectStore('sessions').delete(id);
+    await new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});
+  }catch(e){}
+}
+async function restoreSession(session){
+  if(!confirm(`恢复「${session.label}」到主页？\n当前主页内容将被替换。`)) return;
+  tasks = session.tasks.map(t=>({...t, data:(t.data||[]).map(iss=>({...iss}))}));
+  document.getElementById('task-list').innerHTML='';
+  _aiQueue.length=0; _aiRunning=0; doneAnalyzing=0; totalAnalyzing=0;
+  setProgress(0,false);
+  tasks.forEach(task=>{
+    addTaskRow(task);
+    const row=document.getElementById('row-'+task.id);
+    const thumbImg=row&&row.querySelector('.task-thumb');
+    if(thumbImg){
+      thumbImg.style.cursor='zoom-in';
+      thumbImg.onclick=e=>{e.stopPropagation();previewImage(task.dataUrl,task.name);};
+    }
+    updateTaskStatus(task.id,task.status,task.status==='done'?`发现${task.data?.length||0}个问题`:'');
+  });
+  updateCount();
+  setStatus(`已恢复 ${tasks.length} 张，共 ${tasks.reduce((s,t)=>s+(t.data?.length||0),0)} 个问题`);
+  switchTab(0);
+  showToast(`✅ 已恢复「${session.label}」`);
+}
+async function renderHistory(){
+  const el=document.getElementById('history-content');
+  el.innerHTML='<div style="color:var(--text-hint);font-size:13px;text-align:center;padding:20px">加载中...</div>';
+  const sessions=await loadAllSessions();
+  if(!sessions.length){
+    el.innerHTML=`<div class="state-card"><div class="state-icon">🕘</div><div class="state-title">暂无历史记录</div><div class="state-sub">完成分析后点击「存档」即可保存</div></div>`;
+    return;
+  }
+  el.innerHTML='';
+  sessions.forEach(s=>{
+    const card=document.createElement('div');
+    card.className='hist-card fade-in';
+    const d=new Date(s.createdAt);
+    const timeStr=d.toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    // 统计各状态问题数
+    const total=s.issueCount||0;
+    const doneIssues=s.tasks.reduce((sum,t)=>{
+      return sum+(t.data||[]).filter(iss=>iss.rectStatus==='done').length;
+    },0);
+    const rectPct=total?Math.round(doneIssues/total*100):0;
+    card.innerHTML=`
+      <div class="hist-card-header">
+        <div class="hist-card-title">${escHtml(s.label)}</div>
+        <div class="hist-card-time">${timeStr}</div>
+      </div>
+      <div class="hist-card-meta">
+        <span class="hist-meta-badge">📷 ${s.taskCount}张图片</span>
+        <span class="hist-meta-badge">⚠️ ${total}个问题</span>
+        ${total?`<span class="hist-meta-badge" style="background:${rectPct===100?'#D1FAE5':'#FEF3C7'};color:${rectPct===100?'#065F46':'#92400E'};border-color:${rectPct===100?'#6EE7B7':'#FCD34D'}">✅ 整改${rectPct}%</span>`:''}
+      </div>
+      <div class="hist-card-actions">
+        <button class="hist-action-btn primary" onclick="restoreSession(window._histSessions['${s.id}'])">📂 恢复到主页</button>
+        <button class="hist-action-btn" onclick="deleteHistSession('${s.id}',this)">🗑 删除</button>
+      </div>`;
+    el.appendChild(card);
+  });
+  // 挂到 window 方便回调访问
+  window._histSessions={};
+  sessions.forEach(s=>window._histSessions[s.id]=s);
+}
+async function deleteHistSession(id, btn){
+  if(!confirm('确定删除这条历史记录？')) return;
+  await deleteSession(id);
+  btn.closest('.hist-card').remove();
+  showToast('✓ 已删除');
+  if(!document.querySelector('#history-content .hist-card')){
+    document.getElementById('history-content').innerHTML=`<div class="state-card"><div class="state-icon">🕘</div><div class="state-title">暂无历史记录</div><div class="state-sub">完成分析后点击「存档」即可保存</div></div>`;
+  }
+}
+
 function loadConfig() {
   try{const s=localStorage.getItem('sc_cfg');if(s) config=JSON.parse(s);}catch(e){}
   document.getElementById('s-apikey').value=config.api_key||'';
@@ -1199,14 +1372,17 @@ function saveSettings() {
 
 function switchTab(idx) {
   currentTab=idx;
-  ['view-home','view-summary','view-detail','view-settings'].forEach((id,i)=>{
-    document.getElementById(id).classList.toggle('active',i===idx);
+  const viewMap={0:'view-home',1:'view-summary',2:'view-detail',3:'view-settings',4:'view-history'};
+  Object.entries(viewMap).forEach(([i,id])=>{
+    document.getElementById(id).classList.toggle('active', Number(i)===idx);
   });
-  ['nav-home','nav-summary','nav-add','nav-settings'].forEach((id,i)=>{
-    const navIdx=[0,1,99,3][i];
-    document.getElementById(id).classList.toggle('active',navIdx===idx);
+  const navMap={0:'nav-home',1:'nav-summary',3:'nav-settings',4:'nav-history'};
+  Object.entries(navMap).forEach(([i,id])=>{
+    document.getElementById(id).classList.toggle('active', Number(i)===idx);
   });
+  document.getElementById('nav-add').classList.remove('active');
   if(idx===1) renderSummary();
+  if(idx===4) renderHistory();
 }
 function showAddMenu(){openModal('modal-add');}
 
@@ -1937,13 +2113,57 @@ function setupFsZoom(){
 
 function openDetail(task){
   currentDetailTask=task;
-  document.getElementById('detail-title').textContent='  '+task.name;
+  _updateDetailNav();
   document.getElementById('detail-img').src=task.dataUrl||'';
   initZoom();
-  ['view-home','view-summary','view-settings'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  ['view-home','view-summary','view-settings','view-history'].forEach(id=>document.getElementById(id).classList.remove('active'));
   document.getElementById('view-detail').classList.add('active');
   renderDetailContent(task);
   setTimeout(setupDetailZoom,100);
+  _setupDetailSwipe();
+}
+function _updateDetailNav(){
+  const task=currentDetailTask;
+  if(!task) return;
+  const idx=tasks.indexOf(task);
+  document.getElementById('detail-title').textContent='  '+task.name;
+  document.getElementById('detail-nav-label').textContent=`${idx+1}/${tasks.length}`;
+  document.getElementById('detail-prev').disabled=idx<=0;
+  document.getElementById('detail-next').disabled=idx>=tasks.length-1;
+  document.getElementById('detail-prev').style.opacity=idx<=0?'0.3':'1';
+  document.getElementById('detail-next').style.opacity=idx>=tasks.length-1?'0.3':'1';
+}
+function detailNav(dir){
+  const idx=tasks.indexOf(currentDetailTask);
+  const next=tasks[idx+dir];
+  if(!next) return;
+  currentDetailTask=next;
+  document.getElementById('detail-img').src=next.dataUrl||'';
+  initZoom();
+  renderDetailContent(next);
+  _updateDetailNav();
+  setTimeout(setupDetailZoom,100);
+}
+let _swipeStartX=0,_swipeStartY=0;
+function _setupDetailSwipe(){
+  const view=document.getElementById('view-detail');
+  if(view._swipeBound) return;
+  view._swipeBound=true;
+  view.addEventListener('touchstart',e=>{
+    if(e.touches.length!==1) return;
+    _swipeStartX=e.touches[0].clientX;
+    _swipeStartY=e.touches[0].clientY;
+  },{passive:true});
+  view.addEventListener('touchend',e=>{
+    if(e.changedTouches.length!==1) return;
+    const dx=e.changedTouches[0].clientX-_swipeStartX;
+    const dy=e.changedTouches[0].clientY-_swipeStartY;
+    // 水平滑动距离 > 60px 且垂直位移 < 50px，才判定为切换手势
+    if(Math.abs(dx)>60&&Math.abs(dy)<50){
+      if(dx<0) detailNav(1);   // 左滑 → 下一张
+      else detailNav(-1);       // 右滑 → 上一张
+    }
+  },{passive:true});
 }
 function closeDetail(){
   document.getElementById('view-detail').classList.remove('active');
@@ -2043,6 +2263,12 @@ function buildRiskCard(item,index,taskId){
       </div>
     </div>
     <div class="card-issue">${escHtml(issueShort)}</div>
+    <div class="rect-status-bar">
+      <span style="font-size:11px;color:var(--text-hint);flex-shrink:0">整改：</span>
+      <button class="rect-btn rect-pending ${!item.rectStatus||item.rectStatus==='pending'?'active':''}" onclick="setRectStatus(event,this,'pending','${taskId}')">待整改</button>
+      <button class="rect-btn rect-ongoing ${item.rectStatus==='ongoing'?'active':''}" onclick="setRectStatus(event,this,'ongoing','${taskId}')">整改中</button>
+      <button class="rect-btn rect-done ${item.rectStatus==='done'?'active':''}" onclick="setRectStatus(event,this,'done','${taskId}')">已完成</button>
+    </div>
     <div class="card-hint">💬 点击查看详情</div>
     ${(item._corpViolations && item._corpViolations.length) ? `
     <div style="margin-top:6px;padding:5px 8px;background:rgba(220,38,38,0.08);border-left:3px solid #DC2626;border-radius:0 6px 6px 0;display:flex;align-items:center;gap:6px">
@@ -2063,6 +2289,16 @@ function buildRiskCard(item,index,taskId){
   return card;
 }
 
+function setRectStatus(e,btn,status,taskId){
+  e.stopPropagation();
+  const card=btn.closest('.risk-card');
+  if(!card||!card._item) return;
+  card._item.rectStatus=status;
+  card.querySelectorAll('.rect-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const labels={'pending':'待整改','ongoing':'整改中','done':'✅ 已完成'};
+  showToast(labels[status]||status);
+}
 function openEdit(item,taskId){
   editingItem=item;editingTaskId=taskId;
   document.getElementById('edit-level').value=item.risk_level||'一般质量缺陷';
@@ -2152,8 +2388,10 @@ function copyAll(){
   sorted.forEach((iss,i)=>{
     const experts = iss._experts && iss._experts.length > 0 ? iss._experts : (iss.category ? [iss.category] : []);
     const expertLabel = experts.length > 1 ? `${experts.join('、')}（${experts.length}专家确认）` : (experts[0] || '—');
+    const rectMap={'pending':'待整改','ongoing':'整改中','done':'已完成'};
+    const rectLabel=rectMap[iss.rectStatus]||'待整改';
     const corpNote = (iss._corpViolations||[]).length ? `   🏢 违反企业内规：${(iss._corpViolations||[]).map(v=>v.id).join('、')}` : '';
-    lines.push(`${i+1}. 【${iss.risk_level}】`,`   图片：${iss._src}`,`   专业：${expertLabel}`,`   [${iss.category}] ${iss.issue}`,`   📋 依据：${iss.regulation||'—'}`,`   ✅ 整改：${iss.correction||'—'}`,...(corpNote?[corpNote]:[]),'');
+    lines.push(`${i+1}. 【${iss.risk_level}】[${rectLabel}]`,`   图片：${iss._src}`,`   专业：${expertLabel}`,`   [${iss.category}] ${iss.issue}`,`   📋 依据：${iss.regulation||'—'}`,`   ✅ 整改：${iss.correction||'—'}`,...(corpNote?[corpNote]:[]),'');
   });
   copyText(lines.join('\n'));
   showToast(`✅ 已复制${allIssues.length}个问题`);
@@ -2161,13 +2399,24 @@ function copyAll(){
 
 function clearAll(){
   if(!tasks.length) return;
-  if(!confirm('确定要清空所有图片吗？')) return;
+  const hasDone=tasks.some(t=>t.status==='done');
+  if(hasDone){
+    const choice=confirm('清空前是否保存到历史记录？\n\n点击「确定」先存档再清空\n点击「取消」直接清空不保存');
+    if(choice){
+      saveSessionToHistory().then(()=>{
+        _doClearAll();
+      });
+      return;
+    }
+  } else {
+    if(!confirm('确定要清空所有图片吗？')) return;
+  }
+  _doClearAll();
+}
+function _doClearAll(){
   tasks=[];
-  // 同时清空 AI 队列，防止后台任务完成后弹出幽灵提示
-  _aiQueue.length=0;
-  _aiRunning=0;
-  doneAnalyzing=0;
-  totalAnalyzing=0;
+  _aiQueue.length=0; _aiRunning=0;
+  doneAnalyzing=0; totalAnalyzing=0;
   document.getElementById('task-list').innerHTML='';
   setProgress(0,false);
   updateCount();setStatus('就绪');showToast('✓ 队列已清空');
