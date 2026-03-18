@@ -276,7 +276,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
   <!-- HOME VIEW -->
   <div class="view active" id="view-home">
     <div class="topbar">
-      <h1>🏗️ 安全质量助手V4.5</h1>
+      <h1>🏗️ 安全质量助手V4.0</h1>
       <span class="count-badge" id="count-badge">0/20</span>
     </div>
     <div class="scene-bar">
@@ -1395,13 +1395,15 @@ function pickFiles(src){
 
 // API实际限制：阿里百炼/硅基流动 base64图片上限约4MB
 // 原图超过约3MB就会触发压缩，超过限制会导致API静默失败（返回空结果）
-const MAX_IMG_MB = 8;        // API可接受的最大图片体积（MB）
+const MAX_IMG_MB = 4;        // API可接受的最大图片体积（MB）
 const MAX_DIMENSION = 1600;  // 最大边长（降低token消耗，提升识别率）
 const MAX_TASK = 20;
 // AI_CONCURRENCY 已由新队列系统 AI_MAX_CONCURRENCY=2 接管
 
 async function compressImage(file){
-  const maxSize = MAX_IMG_MB * 1024 * 1024;
+  // base64 体积 = 原始字节 × 4/3，API限制是base64字符数5.5MB
+  // 所以原始文件目标压到 5.5 × 3/4 = 4.1MB 以内
+  const maxSize = Math.floor(5.5 * 1024 * 1024 * 3 / 4); // ~4.1MB原始字节
 
   showToast(`图片正在处理压缩，请稍候...`);
 
@@ -1438,20 +1440,33 @@ async function compressImage(file){
         canvas.height = h;
         ctx.drawImage(img, 0, 0, w, h);
 
-        // 从quality=0.85开始逐步降低，直到体积达标
         let quality = 0.85;
+        let lastBlob = null; // 保存最后一次压缩结果
 
         function loop(){
           canvas.toBlob(blob => {
             if(!blob){
-              showToast('⚠️ 压缩失败，尝试使用原图');
-              resolve(file);
+              // blob生成失败，用上一次结果或原图
+              if(lastBlob){
+                const f = new File([lastBlob], file.name.replace(/\.[^.]+$/, '.jpg'), {type:'image/jpeg'});
+                resolve(f);
+              } else {
+                showToast('⚠️ 压缩失败，尝试使用原图');
+                resolve(file);
+              }
               return;
             }
-            if(blob.size <= maxSize || quality < 0.3){
+            lastBlob = blob;
+            if(blob.size <= maxSize){
+              // 达标，输出
               const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {type:'image/jpeg'});
               const savedMB = ((file.size - blob.size)/1024/1024).toFixed(1);
               showToast(`✓ 压缩完成，节省 ${savedMB}MB`);
+              resolve(compressed);
+            } else if(quality <= 0.2){
+              // quality已到底，用当前最小blob，而非原图
+              showToast(`⚠️ 图片已最大压缩(${(blob.size/1024/1024).toFixed(1)}MB)`);
+              const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {type:'image/jpeg'});
               resolve(compressed);
             } else {
               quality = Math.round((quality - 0.1) * 10) / 10;
@@ -1472,8 +1487,9 @@ async function compressImage(file){
 async function processFile(file){
   let f = file;
 
-  // 只要超过 MAX_IMG_MB 就压缩
-  if(file.size > MAX_IMG_MB * 1024 * 1024){
+  // base64上限5.5MB对应原始字节约4.1MB，超过就压缩
+  const COMPRESS_THRESHOLD = Math.floor(5.5 * 1024 * 1024 * 3 / 4);
+  if(file.size > COMPRESS_THRESHOLD){
     try {
       f = await compressImage(file);
     } catch(e) {
