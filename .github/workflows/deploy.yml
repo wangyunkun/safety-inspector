@@ -1,13 +1,11 @@
 name: Deploy to GitHub Pages
 
 on:
-  env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
-  push:
+    push:
     branches: [ main ]
   workflow_dispatch:
-
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 permissions:
   contents: read
   pages: write
