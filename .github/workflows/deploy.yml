@@ -1,11 +1,13 @@
 name: Deploy to GitHub Pages
 
 on:
-    push:
+  push:
     branches: [ main ]
   workflow_dispatch:
+
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # ✅ 强制使用 Node 24
+
 permissions:
   contents: read
   pages: write
@@ -20,7 +22,9 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
     runs-on: ubuntu-latest
+
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
