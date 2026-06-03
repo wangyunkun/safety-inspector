@@ -276,7 +276,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
   <!-- HOME VIEW -->
   <div class="view active" id="view-home">
     <div class="topbar">
-      <h1>🏗️ 安全质量助手V4.0</h1>
+      <h1>🏗️ 安全质量助手V5.1</h1>
       <span class="count-badge" id="count-badge">0/20</span>
     </div>
     <div class="scene-bar">
@@ -645,7 +645,7 @@ async function loadCorpRulesFromServer() {
 }
 
 function saveCorpRulesToStorage() {
-  try { localStorage.setItem('corp_rules_db', JSON.stringify(corpRulesDB)); } 
+  try { localStorage.setItem('corp_rules_db', JSON.stringify(corpRulesDB)); }
   catch(e) { showToast('⚠️ 规范库过大无法本地保存，本次会话仍有效'); }
 }
 
@@ -1130,84 +1130,200 @@ const REGULATION_DB = {
 };
 
 // =============================================
-// 路由提示词（V7：14个专家）
+// 路由提示词（V5.1：14个专家 + 3步分析）
 // =============================================
-const ROUTER_PROMPT = `你是一名拥有25年经验的工程建设总监。请仔细扫描施工现场图片，快速识别核心施工内容，指派3-6名最对口的技术专家。
+const ROUTER_PROMPT = `你是30年经验的工程建设总监。请执行以下三步分析：
 
-【可选专家】（共14个，必须从此列表选择）：
+## 第一步：场景识别（2句话）
+- 识别施工阶段和具体作业内容
+- 描述图片中可见的关键人物、设备、材料、作业面
+
+## 第二步：风险热点（3-5条）
+列出图片中最值得专家关注的风险部位
+
+## 第三步：选派专家（3-6名）
+从以下14位专家中选派，说明每位专家的具体聚焦检查内容：
 安全、消防、机械、土建、机电、水利、环保、电气、结构、给排水、基坑、边坡、隧洞、管道
 
-【强制规则】：
-R1. 始终包含"安全"专家（100%必选）。
-R2. 图片模糊或无法识别具体内容，仅输出["安全"]。
-R3. 看到起重机械、挖掘机、装载机、塔吊、吊车、吊篮、混凝土泵车 → 必选"机械"。
-R4. 看到配电箱、电缆、桥架、临时用电设施 → 必选"电气"。
-R5. 看到模板支撑、钢筋绑扎、混凝土浇筑、钢结构 → 必选"结构"。
-R6. 看到基坑开挖、围护桩、支撑、降水井 → 必选"基坑"。
-R7. 看到山体边坡、岩石开挖、挡土墙、格构梁、锚索 → 必选"边坡"。
-R8. 看到隧洞开挖、拱架、喷锚支护、掌子面 → 必选"隧洞"。
-R9. 看到大坝、堤防、围堰、水闸、渠道、溢洪道 → 必选"水利"。
-R10. 看到气瓶、动火作业、气焊气割 → 必选"消防"。
-R11. 看到工艺管道、阀门、法兰、压力管道 → 必选"管道"。
-R12. 看到多专业综合管线(风管+水管+桥架) → 必选"机电"。
-R13. 看到砌体、砌砖、抹灰、屋面、门窗 → 必选"土建"。
-R14. 看到扬尘、裸土、围挡、建筑垃圾、污水排放 → 必选"环保"。
-R15. 看到给排水管道、检查井、消防栓、水泵 → 必选"给排水"。
+规则：
+- "安全"专家必须选派
+- 看到起重机械/挖掘机/装载机/塔吊/吊车/吊篮/泵车 → 必选"机械"
+- 看到配电箱/电缆/桥架/临时用电 → 必选"电气"
+- 看到模板支撑/钢筋/混凝土/钢结构 → 必选"结构"
+- 看到基坑开挖/围护桩/支撑/降水井 → 必选"基坑"
+- 看到边坡/挡土墙/格构梁/锚索 → 必选"边坡"
+- 看到隧洞开挖/拱架/喷锚支护/掌子面 → 必选"隧洞"
+- 看到大坝/堤防/围堰/水闸/渠道/溢洪道 → 必选"水利"
+- 看到气瓶/动火作业/气焊气割 → 必选"消防"
+- 看到管道/阀门/法兰/压力管道 → 必选"管道"
+- 看到风管+水管+桥架综合管线 → 必选"机电"
+- 看到砌体/砌砖/抹灰/屋面/门窗 → 必选"土建"
+- 看到扬尘/裸土/围挡/建筑垃圾/污水 → 必选"环保"
+- 看到给排水管道/检查井/消防栓/水泵 → 必选"给排水"
+- 每位专家需给出具体聚焦指令（不要泛泛说"全面检查"）
+- 图片模糊无法识别 → 仅输出场景为"无法识别"，experts为[{"name":"安全","focus":"初步检查"}]
 
-【专家数量控制】：精确选派，不超过6个，优先选最相关的专家。
+输出纯JSON对象（不要markdown包裹）：
+{"scene": "场景描述", "hotspots": ["风险1","风险2","风险3"], "experts": [
+  {"name": "机械", "focus": "检查挖掘机吊装作业及钢丝绳状态"},
+  {"name": "安全", "focus": "检查人员防护和临边洞口"}
+]}`;
 
-输出格式：只输出JSON数组，不要其他文字。
-示例：["机械","安全","结构"]`;
-
-// 移除排他性指令，让专家发挥全力
-function buildExpertPrompt(role, kb, promptMode) {
-  const criticalStr = kb.critical_hazards.map(h=>`⚠️ ${h}`).join('\n');
-  const checklistStr = kb.checklist.map(c=>`🔍 ${c}`).join('\n');
-  const mustReportStr = kb.must_report_if.map(m=>`✅ ${m}`).join('\n');
+// V5.1 专家提示词 — 三级优先级：致命→严重→一般
+function buildExpertPrompt(role, kb, promptMode, sceneContext='', focusInstruction='') {
+  // 区分致命和一般的危害
+  const fatalHazards = kb.critical_hazards.filter(h => h.includes('致命') || h.includes('【致命】'));
+  const severeHazards = kb.critical_hazards.filter(h => !fatalHazards.includes(h));
 
   let modeNote = '';
   if(promptMode==='safety') modeNote='\n⚡ 本次任务：仅识别安全隐患，忽略质量问题。';
   else if(promptMode==='quality') modeNote='\n⚡ 本次任务：仅识别质量缺陷，忽略安全隐患。';
   else if(promptMode==='critical') modeNote='\n⚡ 本次任务：仅识别严重安全隐患，只输出risk_level为"严重安全隐患"的条目。';
 
-  return `你是一名【${role}】（${kb.role_desc}），拥有30年一线经验。你刚检查完现场，现在要写整改通知单。${modeNote}
+  let parts = [];
+  parts.push(`你是【${role}】专家（${kb.role_desc}），拥有30年一线经验。${modeNote}
 
-请专注你所在专业范畴（${kb.scope}），发现任何隐患必须报告，不要因为认为"其他专家会报告"而选择忽略！
+## 场景背景
+${sceneContext || '施工现场图片'}
 
-## 典型重大隐患清单（必须重点检查）
-${criticalStr}
-⚠️ 如果发现上述任一情形，必须立即报告为"严重安全隐患"！
+## 本次聚焦指令
+${focusInstruction || '请按'+role+'专业角度全面检查'}
 
-## 深度检查清单（按此逐项扫描）
-${checklistStr}
+---
 
-## 必须报告的情形
-${mustReportStr}
-✅ 发现上述任一情形，直接报告，不要犹豫！
+## 🔴 第一优先级：致命隐患（必须逐一排查，发现必报"严重安全隐患"）
+`);
 
-## 核心规范依据（引用条文必须准确）
+  if(fatalHazards.length) {
+    parts.push(fatalHazards.map((h,i)=>`${i+1}. ${h}`).join('\n'));
+  } else {
+    parts.push('（本专业无特定致命隐患清单，但仍需仔细排查可能的致死风险：高处坠落/物体打击/坍塌/触电/机械伤害）');
+  }
+
+  parts.push(`
+
+## 🟠 第二优先级：严重安全隐患（逐一排查，不可遗漏）
+`);
+  if(severeHazards.length) {
+    parts.push(severeHazards.map((h,i)=>`${i+1}. ${h}`).join('\n'));
+  }
+  if(kb.checklist && kb.checklist.length) {
+    parts.push(`
+## 🟡 第三优先级：一般质量/安全问题
+检查以下项目，有则报告、无则跳过：
+${kb.checklist.map(c=>'🔍 '+c).join('\n')}`);
+  }
+
+  if(kb.must_report_if && kb.must_report_if.length) {
+    parts.push(`
+
+## 🚨 必须报告的情形（看到必报，不可遗漏）
+${kb.must_report_if.map(m=>'✅ '+m).join('\n')}`);
+  }
+
+  parts.push(`
+
+## 📋 参考规范
 ${kb.norms}
 
-## 误判警示（以下情况不要误报）
-${kb.anti_hallucination}
+## ❌ 误判警示（以下情况不要误报）
+${kb.anti_hallucination || '请基于图片中的确凿证据判断，不要推测。'}
 
-## 输出格式要求（JSON数组）
+## 📐 分析纪律（必须遵守）
+1. **按优先级顺序排查**：先致命→再严重→最后一般，不要跳过前两级
+2. **证据原则**：每个发现必须能在图片中明确指出证据位置，看不到的不报告
+3. **置信度门槛**：confidence < 0.7 的问题不要输出（不确定的宁可漏报）
+4. **规范性要求**：每条问题必须引用具体的规范条文号
+5. **整改可执行**：correction 字段必须是可执行的具体措施，不写"加强管理"
+
+## 📤 输出格式（纯JSON数组，不要markdown包裹）
 每个问题必须包含：
 - risk_level: "严重安全隐患"/"一般安全隐患"/"严重质量缺陷"/"一般质量缺陷"
-- issue: 具体描述（说人话，不要套话，不超过80字）
-- regulation: 规范条文号（如"GB 50242-2002 第3.3.15条"）
-- correction: 整改措施（具体可执行，如"立即停工，更换合格管材"）
+- issue: 具体描述（说人话，含图片位置证据，如"画面左侧脚手架第二层…"）
+- regulation: 规范条文号（如"JGJ 59-2011 3.2.5条"）
+- correction: 可执行的具体整改措施
 - confidence: 0.0-1.0（不确定给0.6-0.7）
+- evidence_location: 图片中的位置（左上角/中间/右侧/底部）
 
 输出示例：
-[{"risk_level":"严重安全隐患","issue":"具体问题描述","regulation":"规范 第X条","correction":"整改措施","confidence":0.95}]
+[{"risk_level":"严重安全隐患","issue":"画面左侧临边洞口无防护栏杆","regulation":"JGJ 59-2011 3.13.3条","correction":"立即设置1.2m高防护栏杆并固定","confidence":0.95,"evidence_location":"画面左侧"}]
 
 最后强调：
 1. 不要说"可能存在""疑似"，要给出明确判断
-2. 不要说"建议"，要说"必须""立即"
-3. 问题描述要具体（如"DN100止回阀装反"而不是"阀门安装不规范"）
-4. 看到典型重大隐患必须报告为"严重安全隐患"
-5. 如果图片中确实没有${role}专业的问题，输出空数组[]`;
+2. 看到典型重大隐患必须报告为"严重安全隐患"
+3. 如果确实没有${role}专业的问题，输出空数组[]`);
+
+  return parts.join('');
+}
+
+// =============================================
+// V5.1 新增：路由解析 + AI 综合汇总 + 二次复核
+// =============================================
+
+function parseRouter(text) {
+  if(!text) return {};
+  try {
+    const clean = text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    const s = clean.indexOf('{'), e = clean.lastIndexOf('}')+1;
+    if(s!==-1 && e>s) return JSON.parse(clean.slice(s,e));
+  } catch(err) {}
+  return {};
+}
+
+async function synthesizeIssues(preset, b64, allIssues, sceneDesc) {
+  // AI 综合汇总：去重、合并、重排（补充规则引擎去重）
+  const issuesJson = JSON.stringify(allIssues, null, 2);
+  const synthPrompt = `你是工程建设总监，拥有30年综合管理经验。请对以下来自不同专家的检查结果进行综合汇总。
+
+## 场景背景
+${sceneDesc}
+
+## 原始发现（${allIssues.length}条）
+\`\`\`json
+${issuesJson}
+\`\`\`
+
+## 汇总原则
+1. **去重合并**：不同专家报告的同一问题合并为1条
+2. **修正判定**：如果某条结论明显不合理（正常状态判定为严重隐患），直接删除
+3. **提升优先级**：多专家印证可提升risk_level
+4. **补充规范**：缺少规范条文号的尝试补充
+5. **保证完整性**：去重后至少保留原始发现70%以上的条目
+
+## 输出格式（纯JSON数组，不要markdown包裹）
+[{"risk_level":"严重安全隐患","issue":"合并后完整描述","regulation":"规范条文号","correction":"整改措施","confidence":0.95,"category":"主导专业","merged_from":["原始摘要1","原始摘要2"]}]
+
+现在开始汇总。输出纯JSON数组。`;
+  try {
+    const resp = await callAI(preset, synthPrompt, '请汇总上述检查结果，去重合并后输出JSON数组。', null, 0.2, 4096);
+    return parseIssues(resp, '');
+  } catch(err) {
+    return allIssues;
+  }
+}
+
+async function recheckEmpty(preset, b64, sceneDesc, experts) {
+  // 二次复核：所有专家都报告零问题时重新仔细检查
+  const expertNames = experts.map(e=>e.name||e).filter(Boolean);
+  const recheckPrompt = `你是工程建设安全质量检查的复核专家。前面${expertNames.join('、')}几位专家均报告"未发现问题"。
+
+场景：${sceneDesc}
+
+请用最苛刻的标准重新审查图片：
+1. 重新排查所有致命隐患（高处坠落/物体打击/坍塌/触电/机械伤害）
+2. 检查是否有细微但重要的问题被遗漏（安全帽未系带、安全带低挂高用、配电箱无跨接线等）
+3. 如果确实找不到问题，输出空数组 []
+4. 找到问题严格按JSON格式输出
+
+置信度门槛：只有确凿看到才报（confidence >= 0.8）
+
+输出纯JSON数组。`;
+  try {
+    const resp = await callAI(preset, recheckPrompt, '请用最苛刻的标准复核这张图片。', b64, 0.2, 2048);
+    return parseIssues(resp, '复核');
+  } catch(err) {
+    return [];
+  }
 }
 
 // =============================================
@@ -1734,30 +1850,82 @@ async function analyzeTask(task, promptMode){
   try{
     const preset=PROVIDERS[config.provider];
     const b64=task.dataUrl.split(',')[1];
+
+    // ===== 第一步：智能路由（场景识别 + 风险热点 + 专家指派 + 聚焦指令） =====
     task.progress_msg='🔍 智能分诊中...';
     updateTaskStatus(task.id,'analyzing','🔍 智能分诊中...');
     if(currentDetailTask?.id===task.id) renderDetailContent(task);
 
-    const routerResp=await callAI(preset,ROUTER_PROMPT,'请分析施工内容并选派专家，只输出JSON数组',b64,0.1,256);
-    let roles=parseRoles(routerResp);
-    if(!roles.length) roles=['安全'];
-    roles=roles.filter(r=>REGULATION_DB[r]);
-    if(!roles.includes('安全')) roles.unshift('安全');
-    if(roles.length>6) roles=roles.slice(0,6);
+    const routerResp=await callAI(preset,ROUTER_PROMPT,
+      '请按三步流程分析：场景识别→风险热点→选派专家（含聚焦指令）。输出纯JSON。',b64,0.1,256);
+    const routerResult = parseRouter(routerResp);
+    const experts = routerResult.experts || [];
+    const sceneDesc = routerResult.scene || '施工现场';
+    const hotspots = routerResult.hotspots || [];
 
+    // 降级：如果新格式解析失败，回退到旧数组格式
+    let expertList = experts;
+    if(!expertList.length) {
+      const oldRoles = parseRoles(routerResp);
+      expertList = (oldRoles.length ? oldRoles : ['安全']).map(r=>({name:r,focus:'按'+r+'专业全面检查'}));
+    }
+    expertList = expertList.filter(e=>REGULATION_DB[e.name]);
+    if(!expertList.find(e=>e.name==='安全')) expertList.unshift({name:'安全',focus:'全面安全检查'});
+    if(expertList.length>6) expertList=expertList.slice(0,6);
+
+    // ===== 第二步：各专家分析（聚焦指令驱动） =====
     const allRawIssues=[];
-    for(let i=0;i<roles.length;i++){
-      const role=roles[i];
-      task.progress_msg=`🔬 ${role}专家分析 (${i+1}/${roles.length})`;
+    const totalExperts = expertList.length;
+    for(let i=0;i<totalExperts;i++){
+      const expert = expertList[i];
+      const role = expert.name;
+      const focus = expert.focus || '按'+role+'专业全面检查';
+      const kb = REGULATION_DB[role];
+
+      task.progress_msg=`🔬 ${role}专家分析 (${i+1}/${totalExperts}): ${focus.slice(0,20)}...`;
       updateTaskStatus(task.id,'analyzing',task.progress_msg);
       if(currentDetailTask?.id===task.id) renderDetailContent(task);
-      const kb=REGULATION_DB[role];
-      const resp=await callAI(preset,buildExpertPrompt(role,kb,promptMode),'请分析图片，找出所有问题。只输出JSON数组。',b64,0.3,2048);
-      allRawIssues.push(...parseIssues(resp,role));
+
+      let hotspotHint = '';
+      if(hotspots.length) {
+        hotspotHint = '\n\n【总监特别提示 — 以下风险热点请重点检查】\n'+hotspots.map(h=>'• '+h).join('\n');
+      }
+
+      const resp = await callAI(preset,
+        buildExpertPrompt(role,kb,promptMode,sceneDesc,focus),
+        '请按三级优先级顺序排查。'+hotspotHint+'\n输出纯JSON数组。',b64,0.3,4096);
+      const issues = parseIssues(resp,role);
+      if(issues.length) allRawIssues.push(...issues);
     }
 
-    const deduped = deduplicateIssues(allRawIssues);
-    task.data = annotateWithCorpRules(deduped); // 企业内规匹配
+    // ===== 第三步：去重 + AI综合汇总（互补） =====
+    let finalIssues = deduplicateIssues(allRawIssues);
+
+    // 如果原始发现较多（>1），运行AI综合汇总进行高层去重和重排
+    if(allRawIssues.length > 1) {
+      task.progress_msg='📊 综合汇总去重中...';
+      updateTaskStatus(task.id,'analyzing','📊 综合汇总去重中...');
+      if(currentDetailTask?.id===task.id) renderDetailContent(task);
+      const synthesized = await synthesizeIssues(preset,b64,allRawIssues,sceneDesc);
+      if(synthesized.length) {
+        // AI汇总结果与规则去重结果取并集（AI汇总可能合并得更合理）
+        const merged = [...synthesized];
+        // 将规则去重中AI未涵盖的加入
+        for(const item of finalIssues) {
+          const dupInSynth = merged.find(s => isSimilarIssue(item,s));
+          if(!dupInSynth) merged.push(item);
+        }
+        finalIssues = merged;
+      }
+    } else if(allRawIssues.length === 0) {
+      // 二次复核：真的没有发现问题？
+      task.progress_msg='🔎 二次复核确认中...';
+      updateTaskStatus(task.id,'analyzing','🔎 二次复核确认中...');
+      if(currentDetailTask?.id===task.id) renderDetailContent(task);
+      finalIssues = await recheckEmpty(preset,b64,sceneDesc,expertList);
+    }
+
+    task.data = annotateWithCorpRules(finalIssues);
     task.status='done';
     const cnt=task.data.length;
     updateTaskStatus(task.id,'done',cnt?`发现${cnt}个问题`:'未发现问题');
