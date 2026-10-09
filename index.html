@@ -382,7 +382,9 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
           </div>
         </div>
         <button class="settings-save" onclick="saveSettings()">💾 保存设置</button>
-        <button class="settings-save" style="background:var(--success);box-shadow:none" onclick="testModelConnection()">🧪 测试模型连接</button>
+        <button class="settings-save" style="background:var(--success);box-shadow:none" onclick="testModelConnection()">🧪 测试模型连接（文本）</button>
+        <button class="settings-save" style="background:#0F766E;box-shadow:none" onclick="testImageVisionRequest()">🖼️ 测试首张图片视觉请求</button>
+        <div style="text-align:center;font-size:12px;color:var(--text-hint);line-height:1.6">图片测试需要先在主页添加至少1张照片。文本连接成功不代表图片请求也成功；该测试会显示图像接口返回的详细错误。</div>
         <div style="text-align:center;font-size:12px;color:var(--text-hint);line-height:1.6">API地域必须与创建 API Key 时选择的地域一致；北京 Key 不能配新加坡域名，反之亦然。</div>
         <div style="text-align:center;font-size:12px;color:var(--text-hint);line-height:1.6">
           API Key 仅保存在您的设备本地<br>不上传任何服务器
@@ -1492,6 +1494,46 @@ async function testModelConnection() {
   }
 }
 
+async function testImageVisionRequest() {
+  const task = tasks.find(t => t && typeof t.dataUrl === 'string' && /^data:image\//i.test(t.dataUrl));
+  if (!task) {
+    alert('请先返回主页添加至少1张施工照片，再运行“测试首张图片视觉请求”。');
+    return;
+  }
+  const key = (document.getElementById('s-apikey').value || '').trim();
+  if (!key) { alert('请先填写 API Key'); return; }
+  config.api_key = key;
+  config.provider = document.getElementById('s-provider').value;
+  config.api_region = document.getElementById('s-region')?.value || 'cn-beijing';
+  try { localStorage.setItem('sc_cfg', JSON.stringify(config)); } catch(e) {}
+  const preset = getProviderConfig();
+  const btn = document.querySelector('button[onclick="testImageVisionRequest()"]');
+  const imageMatch = task.dataUrl.match(/^data:([^;,]+);base64,([\s\S]*)$/i);
+  const imageMeta = imageMatch ? `${imageMatch[1]}，Base64 ${(imageMatch[2].length/1048576).toFixed(2)} MiB字符` : 'Data URL格式异常';
+  if (btn) { btn.disabled = true; btn.textContent = '正在测试图片请求…'; }
+  setStatus(`正在测试图片视觉请求：${task.originalName || task.name}…`);
+  try {
+    const resp = await callAI(
+      preset,
+      '你是视觉接口诊断器。请只判断是否成功读取用户提供的图片，不评价任何安全质量问题。必须输出一个有效JSON对象，格式为：{"ok":true,"visible_summary":"用中文列出最多3个明显可见对象"}。如果无法读取图片，输出{"ok":false,"visible_summary":"原因"}。',
+      '请确认你能看到这张图片，并简单描述最多3个明显可见对象。仅输出JSON对象。',
+      task.dataUrl, 0, 256
+    );
+    const result = parseModelJSON(resp);
+    const msg = `图片视觉请求成功。\n模型：${preset.model}\n地域：${config.api_region === 'ap-southeast-1' ? '新加坡' : '北京'}\n图片：${task.originalName || task.name}（${imageMeta}）\n返回：${JSON.stringify(result).slice(0,900)}`;
+    setStatus('图片视觉请求测试成功');
+    alert(msg);
+  } catch (err) {
+    const detail = diagnoseModelError(err, preset);
+    const msg = `图片视觉请求测试失败。\n阶段：图像输入测试\n模型：${preset.model}\n地域：${config.api_region === 'ap-southeast-1' ? '新加坡' : '北京'}\n图片：${task.originalName || task.name}（${imageMeta}）\n\n具体错误：\n${detail}\n\n请复制完整错误信息反馈，以便区分图片格式/大小、模型权限、接口限制或网络问题。`;
+    setStatus('图片视觉请求测试失败：' + String(err?.message || err).slice(0,180));
+    console.error('图片视觉请求诊断失败', {model:preset.model, region:config.api_region, endpoint:preset.url, imageName:task.originalName||task.name, imageMeta, error:err});
+    alert(msg.slice(0,3500));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🖼️ 测试首张图片视觉请求'; }
+  }
+}
+
 function diagnoseModelError(err,preset) {
   const raw=String(err?.message||err||'未知异常');
   const endpoint=(preset?.url||'').replace('/compatible-mode/v1','');
@@ -1564,7 +1606,7 @@ async function compressImage(file) {
   const sourcePixels = sourceW * sourceH;
   const initialScale = Math.min(1, MAX_DIMENSION / Math.max(sourceW, sourceH), Math.sqrt(MAX_IMAGE_PIXELS / sourcePixels));
   const dimensionsWithinModel = initialScale >= 0.999999;
-  const typeSupported = /^image\/(jpeg|png|webp|gif|avif)$/i.test(file.type || '');
+  const typeSupported = /^image\/(jpeg|png|webp)$/i.test(file.type || '');
   if (file.size <= TARGET_IMAGE_BYTES && dimensionsWithinModel && typeSupported) {
     return {file, dataUrl: sourceDataUrl, compressed:false, originalBytes:file.size};
   }
@@ -1847,6 +1889,9 @@ async function startAnalysis(){
         if(errored > 0){
           setStatus(`完成，${total}个问题，${errored}张失败`);
           showToast(`⚠️ ${errored}张分析失败，可重新点击分析`);
+          const details = tasks.filter(t=>t.status==='error').slice(0,3).map((t,i)=>`${i+1}. ${t.originalName||t.name}\n${t.error||'未记录具体错误'}`).join('\n\n');
+          // 只在批次结束时提醒一次，避免多张图片连续弹窗；原始细节同时写入控制台。
+          setTimeout(()=>alert(`有 ${errored} 张照片分析失败。详细原因：\n\n${details.slice(0,3000)}\n\n若文本连接测试成功，请在“设置”中执行“测试首张图片视觉请求”。`),80);
         } else {
           setStatus(`分析完成，共${total}个问题`);
           showToast(`✅ 分析完成！发现${total}个问题`);
@@ -1967,10 +2012,13 @@ async function analyzeTask(task, promptMode) {
     updateTaskStatus(task.id,'done',`${task.data.length}个问题${task.review_items.length?` · ${task.review_items.length}项现场复核`:''}`);
   } catch(err) {
     task.status='error';
-    task.error=err.message||'网络/模型错误';
+    const stage = task.progress_msg || '分析阶段';
+    const rawMessage = String(err?.message || err || '未知网络/模型错误');
+    task.error = rawMessage.includes(stage) ? rawMessage : `阶段【${stage}】失败：${rawMessage}`;
     updateTaskStatus(task.id,'error',task.error.slice(0,50));
     if(currentDetailTask?.id===task.id) renderDetailContent(task);
-    throw err; // 交由队列执行最多2次重试，避免失败悄悄变成“正常完成”
+    console.error('施工照片分析失败详情：', {task:task.originalName||task.name, stage, model:getProviderConfig()?.model, endpoint:getProviderConfig()?.url, error:rawMessage});
+    throw new Error(task.error); // 交由队列收尾；保留阶段上下文与原始服务端错误
   }
   if(currentDetailTask?.id===task.id) renderDetailContent(task);
 }
@@ -2176,9 +2224,9 @@ async function callAIOnce(preset, system, user, imageInput, temp=0.1, maxTokens=
       throw new Error(`图片Base64大小无效或超过接口限制(${((base64||'').length/1048576).toFixed(2)}MB字符)，请重新添加图片`);
     }
   }
-  const userContent=[];
+  // 按百炼官方多模态示例的顺序先放文本、再放图片，降低兼容层对 content 顺序的差异风险。
+  const userContent=[{type:'text',text:String(user||'请按要求输出有效JSON。')}];
   if(dataUrl) userContent.push({type:'image_url',image_url:{url:dataUrl}});
-  userContent.push({type:'text',text:String(user||'请按要求输出有效JSON。')});
   const body={
     model:preset.model,
     temperature:Math.max(0,Math.min(0.2,Number(temp)||0.1)),
