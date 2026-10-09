@@ -235,7 +235,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
   position:fixed;bottom:calc(var(--safe-bottom) + 80px);left:50%;
   transform:translateX(-50%) translateY(20px) scale(0.9);
   background:rgba(17,25,40,0.9);backdrop-filter:blur(8px);color:#fff;
-  padding:12px 24px;border-radius:30px;font-size:14px;font-weight:500;white-space:nowrap;
+  padding:12px 24px;border-radius:30px;font-size:14px;font-weight:500;white-space:normal;text-align:center;overflow-wrap:anywhere;
   opacity:0;transition:all .3s cubic-bezier(0.175,0.885,0.32,1.275);
   pointer-events:none;z-index:9999;max-width:90vw;
   box-shadow:0 8px 24px rgba(0,0,0,0.15);
@@ -276,7 +276,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
   <!-- HOME VIEW -->
   <div class="view active" id="view-home">
     <div class="topbar">
-      <h1>🏗️ 滇南区域安全质量助手V1.0</h1>
+      <h1>🏗️ 安全质量助手V5.3</h1>
       <span class="count-badge" id="count-badge">0/20</span>
     </div>
     <div class="scene-bar">
@@ -360,6 +360,14 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
             <input type="password" class="settings-input" id="s-apikey" placeholder="粘贴 API Key">
           </div>
           <div class="settings-item">
+            <span class="settings-icon">🌐</span>
+            <span class="settings-label">API地域</span>
+            <select class="settings-select" id="s-region">
+              <option value="cn-beijing">中国内地（北京地域 API Key）</option>
+              <option value="ap-southeast-1">新加坡（国际地域 API Key）</option>
+            </select>
+          </div>
+          <div class="settings-item">
             <span class="settings-icon">🤖</span>
             <span class="settings-label">模型</span>
             <select class="settings-select" id="s-provider">
@@ -374,6 +382,8 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
           </div>
         </div>
         <button class="settings-save" onclick="saveSettings()">💾 保存设置</button>
+        <button class="settings-save" style="background:var(--success);box-shadow:none" onclick="testModelConnection()">🧪 测试模型连接</button>
+        <div style="text-align:center;font-size:12px;color:var(--text-hint);line-height:1.6">API地域必须与创建 API Key 时选择的地域一致；北京 Key 不能配新加坡域名，反之亦然。</div>
         <div style="text-align:center;font-size:12px;color:var(--text-hint);line-height:1.6">
           API Key 仅保存在您的设备本地<br>不上传任何服务器
         </div>
@@ -528,6 +538,19 @@ const PROVIDERS = {
   'qwen-vl-max':      {url:'https://dashscope.aliyuncs.com/compatible-mode/v1',model:'qwen-vl-max',jsonMode:false},
   'siliconflow':      {url:'https://api.siliconflow.cn/v1',model:'Qwen/Qwen2-VL-72B-Instruct',jsonMode:false}
 };
+
+// 百炼各地域的 API Key 与接入域名一一对应，不能跨地域混用。
+const API_ENDPOINTS = {
+  'cn-beijing': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+  'ap-southeast-1': 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'
+};
+function getProviderConfig() {
+  const provider = PROVIDERS[config.provider] || PROVIDERS['qwen3.8-max-0902'];
+  // 硅基流动使用独立 Endpoint，不套用百炼地域。
+  if (config.provider === 'siliconflow') return {...provider};
+  const region = config.api_region || 'cn-beijing';
+  return {...provider, url: API_ENDPOINTS[region] || API_ENDPOINTS['cn-beijing']};
+}
 
 
 // =============================================
@@ -1277,7 +1300,7 @@ ${current || '当前没有问题记录。'}
 // =============================================
 // 状态
 // =============================================
-let tasks = [], config = {api_key:'', provider:'qwen3.8-max-0902'};
+let tasks = [], config = {api_key:'', provider:'qwen3.8-max-0902', api_region:'cn-beijing'};
 let currentTab = 0, currentDetailTask = null;
 let editingItem = null, editingTaskId = null;
 let totalAnalyzing = 0, doneAnalyzing = 0;
@@ -1424,8 +1447,10 @@ function loadConfig() {
     // 原版本的视觉模型默认升级到固定快照；用户仍可在设置中切回兼容模型。
     if(['qwen2.5-vl-72b','qwen-vl-max','siliconflow'].includes(config.provider)) config.provider='qwen3.8-max-0902';
   }catch(e){}
+  config.api_region=config.api_region||'cn-beijing';
   document.getElementById('s-apikey').value=config.api_key||'';
   document.getElementById('s-provider').value=PROVIDERS[config.provider]?config.provider:'qwen3.8-max-0902';
+  document.getElementById('s-region').value=API_ENDPOINTS[config.api_region]?config.api_region:'cn-beijing';
   loadCorpRulesFromStorage(); // 恢复企业内规库
 }
 function saveSettings() {
@@ -1433,12 +1458,51 @@ function saveSettings() {
   if(!key){showToast('⚠️ 请先输入 API Key');return;}
   config.api_key=key;
   config.provider=document.getElementById('s-provider').value;
+  config.api_region=document.getElementById('s-region')?.value||'cn-beijing';
   try{
     localStorage.setItem('sc_cfg', JSON.stringify(config));
     showToast('✅ 设置已保存');
   }catch(e){
     showToast('⚠️ 保存失败：'+e.message);
   }
+}
+
+async function testModelConnection() {
+  const key=(document.getElementById('s-apikey').value||'').trim();
+  if(!key){alert('请先填写 API Key');return;}
+  config.api_key=key;
+  config.provider=document.getElementById('s-provider').value;
+  config.api_region=document.getElementById('s-region')?.value||'cn-beijing';
+  try { localStorage.setItem('sc_cfg',JSON.stringify(config)); } catch(e) {}
+  const preset=getProviderConfig();
+  setStatus(`正在测试 ${preset.model}（${config.api_region==='ap-southeast-1'?'新加坡':'北京'}）连接…`);
+  const btn=document.querySelector('button[onclick="testModelConnection()"]');
+  if(btn){btn.disabled=true;btn.textContent='正在测试…';}
+  try {
+    const answer=await callAI(preset,'你是 API 连通性测试助手。请只输出规定文本，不要调用工具。','请仅回复：连接成功',null,0,32);
+    const msg=`连接成功。模型：${preset.model}；地域：${config.api_region==='ap-southeast-1'?'新加坡':'北京'}；返回：${String(answer).slice(0,80)}`;
+    setStatus(msg); alert(msg);
+  } catch(err) {
+    const msg=diagnoseModelError(err,preset);
+    setStatus('模型连接测试失败：'+msg);
+    console.error('模型连接测试失败', {model:preset.model, region:config.api_region, endpoint:preset.url, error:err});
+    alert('模型连接测试失败：\n\n'+msg+'\n\n请根据提示核对地域、API Key、模型权限与网络。');
+  } finally {
+    if(btn){btn.disabled=false;btn.textContent='🧪 测试模型连接';}
+  }
+}
+
+function diagnoseModelError(err,preset) {
+  const raw=String(err?.message||err||'未知异常');
+  const endpoint=(preset?.url||'').replace('/compatible-mode/v1','');
+  if(/Failed to fetch|NetworkError|网络请求失败|Load failed/i.test(raw)) {
+    return `浏览器无法连接 API（${endpoint}）。常见原因：API Key地域和接入地址不一致、网络/代理拦截，或 file:// 页面被浏览器跨域限制。北京地域请选“中国内地（北京）”；新加坡地域请选“新加坡”。原始信息：${raw}`;
+  }
+  if(/401|InvalidApiKey|invalid api.?key|Incorrect API key/i.test(raw)) return `API Key 无效、过期或复制错误。请到与所选地域一致的百炼控制台重新复制 Key。原始信息：${raw}`;
+  if(/403|Forbidden|AccessDenied|permission|无权限/i.test(raw)) return `当前 API Key 没有调用该模型的权限，或业务空间/地域不匹配。请检查模型授权。原始信息：${raw}`;
+  if(/404|model.*not found|模型不存在/i.test(raw)) return `模型 ID 在当前地域不可用，或 Key 对应的地域/业务空间不正确。原始信息：${raw}`;
+  if(/429|quota|rate.?limit|限流/i.test(raw)) return `模型调用限流或额度不足，请稍后再试并检查百炼用量。原始信息：${raw}`;
+  return `${raw}（模型：${preset?.model||'未知'}；地域：${config.api_region||'cn-beijing'}；接入域名：${endpoint||'未知'}）`;
 }
 
 function switchTab(idx) {
@@ -1706,6 +1770,10 @@ async function fetchWithTimeout(url, options, ms = AI_TIMEOUT_MS) {
     if (ctrl.signal.aborted || e?.name === 'AbortError') {
       throw new Error(`请求超时(>${ms/1000}s)，请检查网络、模型服务状态或稍后重试`);
     }
+    if(e instanceof TypeError && /fetch|network|load failed/i.test(String(e.message||''))) {
+      let host='当前 API 域名'; try{host=new URL(url).hostname;}catch(_){}
+      throw new Error(`无法连接 ${host}。请核对 API Key 地域、网络/代理及浏览器跨域限制。原始错误：${e.message||'Failed to fetch'}`);
+    }
     throw e;
   } finally {
     clearTimeout(timer);
@@ -1791,7 +1859,7 @@ async function startAnalysis(){
 async function analyzeTask(task, promptMode) {
   task.status='analyzing'; task.error=null;
   try {
-    const preset=PROVIDERS[config.provider]||PROVIDERS['qwen3.8-max-0902'];
+    const preset=getProviderConfig();
     const imageData=task.dataUrl;
     const allRawIssues=[];
     const allReviewItems=[];
@@ -2127,6 +2195,8 @@ async function callAIOnce(preset, system, user, imageInput, temp=0.1, maxTokens=
   if(!resp.ok) {
     const e=await resp.json().catch(()=>({}));
     const message=e.error?.message||e.message||`HTTP ${resp.status}`;
+    const errorCode=e.error?.code||e.code||e.error?.type||'';
+    const requestId=e.request_id||e.requestId||e.error?.request_id||'';
     if(preset.jsonMode && /response_format|json_object|unsupported|not support/i.test(message)) {
       // 兼容服务端尚未开放JSON模式的账号/区域：本次请求降级一次，但仍强制提示词+本地JSON验证。
       const fallback={...body}; delete fallback.response_format;
@@ -2139,7 +2209,7 @@ async function callAIOnce(preset, system, user, imageInput, temp=0.1, maxTokens=
       if(!rc) throw new Error('模型返回空内容，请检查模型权限或稍后重试');
       return Array.isArray(rc)?rc.map(p=>p.text||'').join('\n'):String(rc);
     }
-    throw new Error(`${message} (HTTP ${resp.status})`);
+    throw new Error(`${message}${errorCode?' ['+errorCode+']':''} (HTTP ${resp.status})${requestId?' request_id='+requestId:''}`);
   }
   const data=await resp.json();
   const choice=data.choices?.[0];
@@ -2671,13 +2741,13 @@ function copyAll() {
   const allIssues=[]; const allReview=[];
   const doneTasks=tasks.filter(t=>t.status==='done');
   doneTasks.forEach(t=>{
-    (t.data||[]).forEach(iss=>allIssues.push({...iss,_src:t.originalName||t.name,_taskId:t.id,_model:t.analysis_meta?.model||PROVIDERS[config.provider]?.model||'未知'}));
+    (t.data||[]).forEach(iss=>allIssues.push({...iss,_src:t.originalName||t.name,_taskId:t.id,_model:t.analysis_meta?.model||getProviderConfig()?.model||'未知'}));
     (t.review_items||[]).forEach(x=>allReview.push({...x,_src:t.originalName||t.name}));
   });
   if(!allIssues.length&&!allReview.length){showToast('暂无可导出的检查结果');return;}
   const sorted=[...allIssues].sort((a,b)=>(RISK_STYLE[a.risk_level]?.priority??9)-(RISK_STYLE[b.risk_level]?.priority??9));
   const now=new Date().toLocaleString('zh-CN');
-  const modelLabel=sorted[0]?sorted[0]._model:(PROVIDERS[config.provider]?.model||'未知');
+  const modelLabel=sorted[0]?sorted[0]._model:(getProviderConfig()?.model||'未知');
   const lines=['施工现场安全质量检查报告',`检查时间：${now}`,`模型版本：${modelLabel}`,`分析引擎：V5.3-visual-audit-v2`,`已分析图片：${doneTasks.length}张`,`已确认问题：${allIssues.length}项`,`现场复核事项：${allReview.length}项`,'='.repeat(48),''];
   sorted.forEach((iss,i)=>{
     const experts=iss._experts?.length?iss._experts:(iss.category?[iss.category]:[]);
