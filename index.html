@@ -1519,9 +1519,21 @@ async function testImageVisionRequest() {
       '请确认你能看到这张图片，并简单描述最多3个明显可见对象。仅输出JSON对象。',
       task.dataUrl, 0, 256
     );
-    const result = parseModelJSON(resp);
-    const msg = `图片视觉请求成功。\n模型：${preset.model}\n地域：${config.api_region === 'ap-southeast-1' ? '新加坡' : '北京'}\n图片：${task.originalName || task.name}（${imageMeta}）\n返回：${JSON.stringify(result).slice(0,900)}`;
-    setStatus('图片视觉请求测试成功');
+    // 此诊断只验证“图片请求是否获得模型响应”，不能把诊断模型的 JSON 格式偏差误判为接口失败。
+    let result;
+    const rawResponse = String(resp || '').trim();
+    if (!rawResponse) throw new Error('模型请求成功但返回内容为空');
+    try {
+      result = parseModelJSON(rawResponse);
+    } catch (parseErr) {
+      // 对非 JSON 返回保留原文：请求链路已得到模型正文，应与 HTTP/图片上传故障区分。
+      result = {response_format:'非JSON文本', note:'模型已返回内容，但没有按诊断提示输出JSON；这不等于图像请求失败。', raw_text:rawResponse};
+    }
+    const resultText = result && result.response_format === '非JSON文本'
+      ? `模型原文（非JSON，截取前900字）：\n${String(result.raw_text||'').slice(0,900)}`
+      : `返回：${JSON.stringify(result).slice(0,900)}`;
+    const msg = `图片视觉请求已收到模型响应。\n模型：${preset.model}\n地域：${config.api_region === 'ap-southeast-1' ? '新加坡' : '北京'}\n图片：${task.originalName || task.name}（${imageMeta}）\n\n${resultText}\n\n说明：若返回内容确实在描述照片，说明图像输入请求已成功到达模型；如内容表示无法读取图片，请将原文反馈以继续排查。`;
+    setStatus('图片视觉请求已收到响应，请检查模型返回内容');
     alert(msg);
   } catch (err) {
     const detail = diagnoseModelError(err, preset);
@@ -2326,7 +2338,13 @@ function parseModelJSON(text) {
     if(v&&typeof v==='object'&&!Array.isArray(v)&&(Array.isArray(v.issues)||v.scene!==undefined||Array.isArray(v.experts)||Array.isArray(v.review_items))) return v;
   }
   for(let i=candidates.length-1;i>=0;i--) if(Array.isArray(candidates[i])) return candidates[i];
-  throw new Error('模型输出不是有效JSON；请求已中止，避免把解析失败误当成“未发现问题”');
+  // 通用 JSON 对象（例如图像连通性诊断的 {ok, visible_summary}）也属于有效 JSON。
+  // 具体业务调用由 parseIssues/parseRouter 等上层函数校验必需字段，不能在通用解析器里误判。
+  for(let i=candidates.length-1;i>=0;i--) {
+    const v=candidates[i];
+    if(v && typeof v==='object' && !Array.isArray(v)) return v;
+  }
+  throw new Error('模型输出不是可解析的JSON；请求已中止，避免把解析失败误当成“未发现问题”');
 }
 function normalizeRiskLevel(item) {
   const valid=['严重安全隐患','一般安全隐患','严重质量缺陷','一般质量缺陷'];
