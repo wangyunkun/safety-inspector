@@ -1294,7 +1294,8 @@ ${current || '当前没有问题记录。'}
 
 输出有效JSON对象，不要Markdown：
 {"issues":[{"risk_level":"严重安全隐患|一般安全隐患|严重质量缺陷|一般质量缺陷","issue":"新增可见问题+位置","regulation":"可靠依据或需核对","correction":"可执行措施","confidence":0.85,"evidence_location":"位置","evidence_status":"照片可直接确认","category":"复核"}],"review_items":[{"item":"现场待核验项","location":"位置/对象","reason":"照片无法确认的原因","priority":"高|中|低"}]}`;
-  const resp = await callAI(preset, prompt, '请独立复核图像并只补充未覆盖的新问题，输出有效JSON对象。', imageData, 0.1, 4096);
+  // 提速：复核轮输出上限 4096 → 2048，并受视觉信号量限制。
+  const resp = await withVisionSlot(()=>callAI(preset, prompt, '请独立复核图像并只补充未覆盖的新问题，输出有效JSON对象。', imageData, 0.1, 2048));
   return {issues: parseIssues(resp, '复核'), review_items: parseReviewItems(resp)};
 }
 
@@ -1581,13 +1582,15 @@ function pickFiles(src){
 }
 
 /* ===== 高保真、硬限制图片处理 ===== */
-// API payload限制更严格，先压到3.8MiB以内；这也保证原始文件>10MB时绝不会带原图绕过限制。
-const MAX_IMG_MB = 3.8;
-const ABSOLUTE_UPLOAD_LIMIT_MB = 10;
+// 提速：先压到1.5MiB/2048px以内；更小的请求体显著加快上传与视觉编码。
+const MAX_IMG_MB = 1.5;
+const ABSOLUTE_UPLOAD_LIMIT_MB = 4;
 const TARGET_IMAGE_BYTES = Math.floor(MAX_IMG_MB * 1024 * 1024);
-const MAX_BASE64_CHARS = 5.5 * 1024 * 1024;
-const MAX_DIMENSION = 3840;
-const MAX_IMAGE_PIXELS = 16_000_000; // Qwen视觉模型单图最大像素参考值
+// 提速参数（V5.5）：视觉隐患识别不需要 3.8MB/3840px，降到约1.5MB/2048px，
+// 显著缩短每次请求的上传与视觉编码(prefill)耗时。
+const MAX_BASE64_CHARS = 2.4 * 1024 * 1024;
+const MAX_DIMENSION = 2048;
+const MAX_IMAGE_PIXELS = 4_200_000;  // 约2048×2048
 const MAX_TASK = 20;
 
 function readFileAsDataURL(file) {
@@ -1661,6 +1664,45 @@ async function compressImage(file) {
     w=nextW; h=nextH; rounds++;
   }
   throw new Error(`图片压缩未能达到上传限制（当前最小约${finalBlob?(finalBlob.size/1048576).toFixed(2):'未知'}MB）。已阻止该图片进入分析队列，请手动转换或缩小图片后重试。`);
+}
+
+/**
+ * 提速：对“用旧版本参数添加的大图/超高分辨率图”在分析开始前就地重编码，
+ * 使已经上传过的图片也能享受新的 1.5MB/2048px 参数。失败不阻断分析（沿用原图）。
+ */
+async function reencodeTaskIfOversized(task, onStatus) {
+  try {
+    const img = await decodeImage(task.dataUrl, task.originalName || task.name);
+    const w0 = img.naturalWidth || img.width, h0 = img.naturalHeight || img.height;
+    const scale = Math.min(1, MAX_DIMENSION / Math.max(w0, h0), Math.sqrt(MAX_IMAGE_PIXELS / (w0 * h0)));
+    let needResize = scale < 0.995;
+    let needRecompress = (task.processedBytes || 0) > TARGET_IMAGE_BYTES;
+    if(!needResize && !needRecompress) return false;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', {alpha:false});
+    if(!ctx) return false;
+    const w = Math.max(1, Math.round(w0 * scale)), h = Math.max(1, Math.round(h0 * scale));
+    canvas.width = w; canvas.height = h;
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0,0,w,h);
+    ctx.drawImage(img, 0, 0, w, h);
+    const qualities = [0.82,0.72,0.62,0.52,0.42,0.32];
+    let blob = null;
+    for(const q of qualities) {
+      blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', q));
+      if(blob && blob.size <= TARGET_IMAGE_BYTES) break;
+    }
+    if(!blob || blob.size > TARGET_IMAGE_BYTES) return false;
+    const outFile = new File([blob], (task.originalName || 'image').replace(/\.[^.]+$/, '') + '.jpg', {type:'image/jpeg', lastModified:Date.now()});
+    const dataUrl = await readFileAsDataURL(outFile);
+    const match = dataUrl.match(/^data:([^;,]+);base64,([\s\S]*)$/i);
+    if(!match || match[2].length > MAX_BASE64_CHARS) return false;
+    task.dataUrl = dataUrl; task.processedBytes = blob.size; task.imageMime = match[1];
+    return true;
+  } catch(e) {
+    console.warn('图片提速重编码失败，沿用原图：', e?.message || e);
+    return false;
+  }
 }
 
 async function processFile(file) {
@@ -1775,7 +1817,7 @@ const AI_MAX_CONCURRENCY = 2;   // 最大并发数
 const AI_IDLE_TIMEOUT_MS  = 60_000;                  // 60秒收不到任何数据块才算卡死
 const AI_MAX_TOTAL_MS     = 240_000;                 // 单次请求总时长硬上限 4 分钟
 const AI_TEXT_BASE_MS     = 30_000;                  // 纯文本小请求基线
-const AI_VISION_BASE_MS   = 90_000;                  // 带图请求基线（含上传与视觉编码prefill）
+const AI_VISION_BASE_MS   = 60_000;                  // 带图请求基线（图已缩到约1.5MB，含上传与视觉编码prefill）
 const AI_MS_PER_OUT_TOKEN = 25;                      // 每个输出token预留的生成时间
 
 /** 按“是否带图 + 最大输出token”估算本次请求的总超时；retries 为已尝试次数，重试逐次放宽。 */
@@ -1785,6 +1827,26 @@ function resolveTotalTimeoutMs(hasImage, maxTokens, retries=0) {
   ms = Math.min(AI_MAX_TOTAL_MS, ms);
   if(retries > 0) ms = Math.min(AI_MAX_TOTAL_MS, Math.round(ms * (1 + 0.5 * retries)));
   return ms;
+}
+
+/* 全局视觉请求信号量（V5.5提速）：图内专家并行后，用它把所有图片的“带图请求”
+   总数限制在 AI_MAX_VISION_INFLIGHT 以内（纯文本请求不占槽），避免并发过高触发限流。 */
+const AI_MAX_VISION_INFLIGHT = 4;
+let _visionInflight = 0;
+const _visionWaiters = [];
+function acquireVisionSlot() {
+  if(_visionInflight < AI_MAX_VISION_INFLIGHT) { _visionInflight++; return Promise.resolve(); }
+  return new Promise(resolve => _visionWaiters.push(resolve));
+}
+function releaseVisionSlot() {
+  _visionInflight = Math.max(0, _visionInflight - 1);
+  const w = _visionWaiters.shift();
+  if(w) { _visionInflight++; w(); }
+}
+/** 包裹一个带图请求：自动获取/释放视觉槽位。 */
+async function withVisionSlot(fn) {
+  await acquireVisionSlot();
+  try { return await fn(); } finally { releaseVisionSlot(); }
 }
 
 let _aiRunning = 0;              // 当前运行中的任务数
@@ -2018,6 +2080,15 @@ async function analyzeTask(task, promptMode) {
   task.status='analyzing'; task.error=null;
   try {
     const preset=getProviderConfig();
+    // 提速：若图片是用旧参数(3.8MB/3840px)添加的，先就地重编码到约1.5MB/2048px。
+    task.progress_msg='⚡ 优化图片以加快分析…';
+    updateTaskStatus(task.id,'analyzing',task.progress_msg);
+    const reencoded=await reencodeTaskIfOversized(task);
+    if(reencoded) {
+      const row=document.getElementById('row-'+task.id);
+      const thumb=row&&row.querySelector('.task-thumb');
+      if(thumb) thumb.src=task.dataUrl;
+    }
     const imageData=task.dataUrl;
     const allRawIssues=[];
     const allReviewItems=[];
@@ -2025,7 +2096,8 @@ async function analyzeTask(task, promptMode) {
     task.progress_msg='🔍 第1轮：场景识别与专家分诊…';
     updateTaskStatus(task.id,'analyzing',task.progress_msg);
     if(currentDetailTask?.id===task.id) renderDetailContent(task);
-    const routerResp=await callAI(preset,ROUTER_PROMPT,'请分析场景、按九宫格找风险热点并选择相关专家。输出有效JSON对象。',imageData,0.1,2048);
+    // 带图请求统一走视觉信号量，限制全局并发
+    const routerResp=await withVisionSlot(()=>callAI(preset,ROUTER_PROMPT,'请分析场景、按九宫格找风险热点并选择相关专家。输出有效JSON对象。',imageData,0.1,2048));
     const routerResult=parseModelJSON(routerResp);
     if(routerResult.review_items) allReviewItems.push(...parseReviewItems(routerResp));
     const sceneDesc=String(routerResult.scene||'施工现场照片');
@@ -2061,18 +2133,32 @@ async function analyzeTask(task, promptMode) {
       }
     }
     const seenExperts=new Set();
-    expertList=expertList.filter(e=>!seenExperts.has(e.name)&&seenExperts.add(e.name)).slice(0,6);
+  
+    expertList=expertList.filter(e=>!seenExperts.has(e.name)&&seenExperts.add(e.name)).slice(0,5);
 
-    for(let i=0;i<expertList.length;i++) {
-      const expert=expertList[i], role=expert.name, kb=REGULATION_DB[role];
-      task.progress_msg=`🔬 第2轮：${role}专项检查（${i+1}/${expertList.length}）`;
-      updateTaskStatus(task.id,'analyzing',task.progress_msg);
-      if(currentDetailTask?.id===task.id) renderDetailContent(task);
+    // 第2轮：各专家并行检查（全局视觉并发由信号量限制在4以内）。
+    task.progress_msg=`🔬 第2轮：${expertList.map(e=>e.name).join('、')}并行专项检查…`;
+    updateTaskStatus(task.id,'analyzing',task.progress_msg);
+    if(currentDetailTask?.id===task.id) renderDetailContent(task);
+
+    let expertDone=0;
+    const expertResults = await Promise.all(expertList.map(expert => {
+      const role=expert.name, kb=REGULATION_DB[role];
       const hotspotHint=hotspots.length?'\n\n总监关注的图像热点（仅作为检查提醒，不可据此臆造缺陷）：\n'+hotspots.map(h=>'• '+h).join('\n'):'';
       const expertPrompt=buildExpertPrompt(role,kb,promptMode,sceneDesc,expert.focus);
-      const resp=await callAI(preset,expertPrompt,'请按全图→九宫格→专业清单的顺序逐项检查。'+hotspotHint+' 输出有效JSON对象，issues只含有图像证据的问题。',imageData,0.1,4096);
-      allRawIssues.push(...filterIssuesForMode(parseIssues(resp,role),promptMode));
-      allReviewItems.push(...parseReviewItems(resp));
+      return withVisionSlot(()=>callAI(preset,expertPrompt,'请按全图→九宫格→专业清单的顺序逐项检查。'+hotspotHint+' 输出有效JSON对象，issues只含有图像证据的问题。',imageData,0.1,2560))
+        .then(resp=>({role,resp}))
+        .finally(()=>{
+          expertDone++;
+          task.progress_msg=`🔬 第2轮：专家并行检查（${expertDone}/${expertList.length}）`;
+          updateTaskStatus(task.id,'analyzing',task.progress_msg);
+          if(currentDetailTask?.id===task.id) renderDetailContent(task);
+        });
+    }));
+    for(const r of expertResults) {
+      if(!r) continue;
+      allRawIssues.push(...filterIssuesForMode(parseIssues(r.resp,r.role),promptMode));
+      allReviewItems.push(...parseReviewItems(r.resp));
     }
 
     // 每张图都执行独立视觉复核，不只在零结果时复核；复核只能补充新问题，不能删除原始发现。
@@ -2411,9 +2497,11 @@ async function callAI(preset, system, user, imageInput, temp=0.1, maxTokens=4096
         }
       }
       const nextTotalMs=resolveTotalTimeoutMs(!!imageInput, maxTokens, attempt+1);
-      console.warn('当前模型请求遇到临时错误，1秒后只重试当前步骤（超时放宽至'+Math.round(nextTotalMs/1000)+'秒）：',err?.message||err);
+      // 并行请求可能同时失败：重试延迟加随机抖动(800~1800ms)，错峰重试以降低再次限流概率。
+      const delay=800+Math.floor(Math.random()*1000);
+      console.warn(`当前模型请求遇到临时错误，${delay}ms后只重试当前步骤（超时放宽至${Math.round(nextTotalMs/1000)}秒）：`,err?.message||err);
       if(!/截断/.test(msg)) setStatus('模型请求暂时异常，正在重试当前分析步骤（超时放宽至'+Math.round(nextTotalMs/1000)+'秒）…');
-      await new Promise(resolve=>setTimeout(resolve,1000));
+      await new Promise(resolve=>setTimeout(resolve,delay));
     }
   }
   throw lastError||new Error('模型请求失败');
