@@ -2025,7 +2025,7 @@ async function analyzeTask(task, promptMode) {
     task.progress_msg='🔍 第1轮：场景识别与专家分诊…';
     updateTaskStatus(task.id,'analyzing',task.progress_msg);
     if(currentDetailTask?.id===task.id) renderDetailContent(task);
-    const routerResp=await callAI(preset,ROUTER_PROMPT,'请分析场景、按九宫格找风险热点并选择相关专家。输出有效JSON对象。',imageData,0.1,1200);
+    const routerResp=await callAI(preset,ROUTER_PROMPT,'请分析场景、按九宫格找风险热点并选择相关专家。输出有效JSON对象。',imageData,0.1,2048);
     const routerResult=parseModelJSON(routerResp);
     if(routerResult.review_items) allReviewItems.push(...parseReviewItems(routerResp));
     const sceneDesc=String(routerResult.scene||'施工现场照片');
@@ -2387,8 +2387,10 @@ async function callAIOnce(preset, system, user, imageInput, temp=0.1, maxTokens=
 
 function isRetryableAIError(err) {
   const message=String(err?.message||err||'');
-  return /请求超时|failed to fetch|networkerror|网络错误|网络连接|\bHTTP\s*(408|409|425|429|500|502|503|504)\b|rate.?limit|too many requests|throttl|temporarily unavailable|internal server error|bad gateway|gateway timeout/i.test(message);
+  return /请求超时|failed to fetch|networkerror|网络错误|网络连接|输出达到长度上限|输出.{0,8}截断|finish_reason[=：]?\s*length|\bmax(?:imum)?\s+(?:output\s+)?tokens?\s+exceeded|length\s+limit|\bHTTP\s*(408|409|425|429|500|502|503|504)\b|rate.?limit|too many requests|throttl|temporarily unavailable|internal server error|bad gateway|gateway timeout/i.test(message);
 }
+
+const AI_MAX_OUTPUT_TOKENS = 8192; // 截断重试时输出上限的天花板
 
 async function callAI(preset, system, user, imageInput, temp=0.1, maxTokens=4096) {
   let lastError;
@@ -2398,9 +2400,19 @@ async function callAI(preset, system, user, imageInput, temp=0.1, maxTokens=4096
     } catch(err) {
       lastError=err;
       if(attempt!==0 || !isRetryableAIError(err)) throw err;
+      const msg=String(err?.message||err||'');
+      // 若是“输出被截断”，重试时放大输出上限（×1.6，最高8192），让模型能输出完整JSON
+      if(/输出达到长度上限|输出.{0,8}截断|finish_reason[=：]?\s*length|max(?:imum)?\s+(?:output\s+)?tokens?\s+exceeded|length\s+limit/i.test(msg)) {
+        const bigger=Math.min(AI_MAX_OUTPUT_TOKENS, Math.ceil(maxTokens*1.6));
+        if(bigger>maxTokens) {
+          console.warn(`模型输出被截断，重试时 max_tokens ${maxTokens} → ${bigger}`);
+          setStatus(`模型输出被截断，正在用更大的输出上限（${bigger}）重试当前步骤…`);
+          maxTokens=bigger;
+        }
+      }
       const nextTotalMs=resolveTotalTimeoutMs(!!imageInput, maxTokens, attempt+1);
       console.warn('当前模型请求遇到临时错误，1秒后只重试当前步骤（超时放宽至'+Math.round(nextTotalMs/1000)+'秒）：',err?.message||err);
-      setStatus('模型请求暂时异常，正在重试当前分析步骤（超时放宽至'+Math.round(nextTotalMs/1000)+'秒）…');
+      if(!/截断/.test(msg)) setStatus('模型请求暂时异常，正在重试当前分析步骤（超时放宽至'+Math.round(nextTotalMs/1000)+'秒）…');
       await new Promise(resolve=>setTimeout(resolve,1000));
     }
   }
