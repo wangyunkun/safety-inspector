@@ -276,7 +276,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
   <!-- HOME VIEW -->
   <div class="view active" id="view-home">
     <div class="topbar">
-      <h1>🏗️ 滇南区域安全质量助手v1.0</h1>
+      <h1>🏗️ 滇南区域安全质量助手V1.0</h1>
       <span class="count-badge" id="count-badge">0/20</span>
     </div>
     <div class="scene-bar">
@@ -1647,12 +1647,11 @@ function previewImage(dataUrl, name){
 }
 
 /* ═══════════════════════════════════════════════════
-   AI 并发队列 v2  (FIFO · 最大并发2 · 失败重试2次)
+   AI 并发队列 v3  (FIFO · 最大并发2 · 仅重试当前失败的API请求)
    ═══════════════════════════════════════════════════ */
 
 const AI_MAX_CONCURRENCY = 2;   // 最大并发数
-const AI_MAX_RETRY       = 2;   // 失败最大重试次数
-const AI_TIMEOUT_MS      = 90000; // 单次 API 超时 90s
+const AI_TIMEOUT_MS      = 60000; // 单次 API（含完整响应正文）最多60秒
 
 let _aiRunning = 0;              // 当前运行中的任务数
 const _aiQueue  = [];            // FIFO 队列，存 {fn, resolve, reject, retries}
@@ -1660,12 +1659,12 @@ const _aiQueue  = [];            // FIFO 队列，存 {fn, resolve, reject, retr
 /** 将一个 async 任务加入 FIFO 队列，返回 Promise */
 function enqueueAI(fn) {
   return new Promise((resolve, reject) => {
-    _aiQueue.push({ fn, resolve, reject, retries: 0 });
+    _aiQueue.push({ fn, resolve, reject });
     _drainAIQueue();
   });
 }
 
-/** 内部：尽可能消耗队列 */
+/** 内部：尽可能消耗队列。只重试单次API请求，不重跑整张照片的所有分析阶段。 */
 function _drainAIQueue() {
   while (_aiRunning < AI_MAX_CONCURRENCY && _aiQueue.length > 0) {
     const job = _aiQueue.shift();
@@ -1676,35 +1675,37 @@ function _drainAIQueue() {
 
 async function _runAIJob(job) {
   try {
-    const result = await job.fn();
-    job.resolve(result);
+    job.resolve(await job.fn());
   } catch (err) {
-    if (job.retries < AI_MAX_RETRY) {
-      job.retries++;
-      const delay = 1000 * job.retries; // 递增等待：1s / 2s
-      console.warn(`AI任务失败，${delay/1000}s后重试(${job.retries}/${AI_MAX_RETRY})`, err.message);
-      setTimeout(() => {
-        _aiQueue.unshift(job); // 重试插回队首（优先级高）
-        _aiRunning--;
-        _drainAIQueue();
-      }, delay);
-      return; // 不走下面的 _aiRunning-- 和 _drainAIQueue
-    }
     job.reject(err);
+  } finally {
+    _aiRunning = Math.max(0, _aiRunning - 1);
+    _drainAIQueue();
   }
-  _aiRunning--;
-  _drainAIQueue();
 }
 
-/** 带超时的 fetch wrapper，超时抛出 Error */
+/**
+ * 带硬超时的 fetch。关键修复：fetch()通常只等到响应头就会返回，
+ * 必须在超时计时器仍然有效时读完响应正文，否则模型生成卡住时会无限等待。
+ * 返回轻量 Response 兼容对象，满足本文件的 ok/status/json/text 调用方式。
+ */
 async function fetchWithTimeout(url, options, ms = AI_TIMEOUT_MS) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), ms);
   try {
-    const resp = await fetch(url, { ...options, signal: ctrl.signal });
-    return resp;
+    const response = await fetch(url, { ...options, signal: ctrl.signal });
+    const bodyText = await response.text(); // 响应正文也受超时控制
+    if (ctrl.signal.aborted) throw new Error(`请求超时(>${ms/1000}s)，模型响应正文未能完整返回`);
+    return {
+      ok: response.ok,
+      status: response.status,
+      text: async () => bodyText,
+      json: async () => JSON.parse(bodyText)
+    };
   } catch (e) {
-    if (e.name === 'AbortError') throw new Error(`请求超时(>${ms/1000}s)，请检查网络或缩小图片`);
+    if (ctrl.signal.aborted || e?.name === 'AbortError') {
+      throw new Error(`请求超时(>${ms/1000}s)，请检查网络、模型服务状态或稍后重试`);
+    }
     throw e;
   } finally {
     clearTimeout(timer);
@@ -1743,6 +1744,11 @@ function updateTaskStatus(id,status,detail){
   const [icon,color,text]=map[status]||map.waiting;
   if(dot) dot.textContent=icon;
   el.textContent=text;el.style.color=color;
+  // 同步显示真实分析阶段，避免底部状态栏一直停留在“排队分析”。
+  if(status==='analyzing') {
+    const task=tasks.find(t=>String(t.id)===String(id));
+    setStatus(`${task?.originalName||task?.name||'图片'}：${detail||'分析中'}`);
+  }
 }
 
 async function startAnalysis(){
@@ -2086,7 +2092,7 @@ function deduplicateIssues(issues) {
   return result;
 }
 
-async function callAI(preset, system, user, imageInput, temp=0.1, maxTokens=4096) {
+async function callAIOnce(preset, system, user, imageInput, temp=0.1, maxTokens=4096) {
   if(!preset || !preset.url || !preset.model) throw new Error('未找到有效的模型配置，请在设置中重新选择模型');
   let dataUrl=null, base64=null;
   if(imageInput) {
@@ -2127,13 +2133,13 @@ async function callAI(preset, system, user, imageInput, temp=0.1, maxTokens=4096
       const retry=await fetchWithTimeout(`${preset.url}/chat/completions`,{
         method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.api_key}`},body:JSON.stringify(fallback)
       });
-      if(!retry.ok){const re=await retry.json().catch(()=>({}));throw new Error(re.error?.message||re.message||`HTTP ${retry.status}`);}
+      if(!retry.ok){const re=await retry.json().catch(()=>({}));throw new Error(`${re.error?.message||re.message||'模型请求失败'} (HTTP ${retry.status})`);}
       const rd=await retry.json();
       const rc=rd.choices?.[0]?.message?.content;
       if(!rc) throw new Error('模型返回空内容，请检查模型权限或稍后重试');
       return Array.isArray(rc)?rc.map(p=>p.text||'').join('\n'):String(rc);
     }
-    throw new Error(message);
+    throw new Error(`${message} (HTTP ${resp.status})`);
   }
   const data=await resp.json();
   const choice=data.choices?.[0];
@@ -2143,6 +2149,28 @@ async function callAI(preset, system, user, imageInput, temp=0.1, maxTokens=4096
   const text=Array.isArray(content)?content.map(p=>p.text||'').join('\n'):String(content||'');
   if(!text.trim()) throw new Error(`模型返回空内容（finish_reason=${choice.finish_reason||'未知'}）`);
   return text;
+}
+
+
+function isRetryableAIError(err) {
+  const message=String(err?.message||err||'');
+  return /请求超时|failed to fetch|networkerror|网络错误|网络连接|\bHTTP\s*(408|409|425|429|500|502|503|504)\b|rate.?limit|too many requests|throttl|temporarily unavailable|internal server error|bad gateway|gateway timeout/i.test(message);
+}
+
+async function callAI(preset, system, user, imageInput, temp=0.1, maxTokens=4096) {
+  let lastError;
+  for(let attempt=0;attempt<2;attempt++) {
+    try {
+      return await callAIOnce(preset, system, user, imageInput, temp, maxTokens);
+    } catch(err) {
+      lastError=err;
+      if(attempt!==0 || !isRetryableAIError(err)) throw err;
+      console.warn('当前模型请求遇到临时错误，1秒后只重试当前步骤：',err?.message||err);
+      setStatus('模型请求暂时异常，正在重试当前分析步骤（1/1）…');
+      await new Promise(resolve=>setTimeout(resolve,1000));
+    }
+  }
+  throw lastError||new Error('模型请求失败');
 }
 
 function parseModelJSON(text) {
@@ -2685,7 +2713,7 @@ function clearAll(){
 }
 function _doClearAll(){
   tasks=[];
-  _aiQueue.length=0; _aiRunning=0;
+  _aiQueue.length=0;
   doneAnalyzing=0; totalAnalyzing=0;
   document.getElementById('task-list').innerHTML='';
   setProgress(0,false);
