@@ -1769,7 +1769,23 @@ function previewImage(dataUrl, name){
    ═══════════════════════════════════════════════════ */
 
 const AI_MAX_CONCURRENCY = 2;   // 最大并发数
-const AI_TIMEOUT_MS      = 60000; // 单次 API（含完整响应正文）最多60秒
+// 超时策略（V5.4）：不再用“60秒总时长”一刀切。
+// - IDLE  : 流式接收时，相邻数据块的最大间隔；模型持续输出就不会误杀。
+// - TOTAL : 整次请求的兜底上限，按“是否带图 + 输出token数”动态估算，重试再放宽。
+const AI_IDLE_TIMEOUT_MS  = 60_000;                  // 60秒收不到任何数据块才算卡死
+const AI_MAX_TOTAL_MS     = 240_000;                 // 单次请求总时长硬上限 4 分钟
+const AI_TEXT_BASE_MS     = 30_000;                  // 纯文本小请求基线
+const AI_VISION_BASE_MS   = 90_000;                  // 带图请求基线（含上传与视觉编码prefill）
+const AI_MS_PER_OUT_TOKEN = 25;                      // 每个输出token预留的生成时间
+
+/** 按“是否带图 + 最大输出token”估算本次请求的总超时；retries 为已尝试次数，重试逐次放宽。 */
+function resolveTotalTimeoutMs(hasImage, maxTokens, retries=0) {
+  const base = hasImage ? AI_VISION_BASE_MS : AI_TEXT_BASE_MS;
+  let ms = base + Math.max(0, Number(maxTokens) || 0) * AI_MS_PER_OUT_TOKEN;
+  ms = Math.min(AI_MAX_TOTAL_MS, ms);
+  if(retries > 0) ms = Math.min(AI_MAX_TOTAL_MS, Math.round(ms * (1 + 0.5 * retries)));
+  return ms;
+}
 
 let _aiRunning = 0;              // 当前运行中的任务数
 const _aiQueue  = [];            // FIFO 队列，存 {fn, resolve, reject, retries}
@@ -1803,30 +1819,115 @@ async function _runAIJob(job) {
 }
 
 /**
- * 带硬超时的 fetch。关键修复：fetch()通常只等到响应头就会返回，
- * 必须在超时计时器仍然有效时读完响应正文，否则模型生成卡住时会无限等待。
+ * 流式 SSE 请求（V5.4）。
+ * 关键修复：V5.3 的“60秒总时长超时”会误杀仍在正常生成的长视觉JSON；
+ * 现在请求带 stream:true，逐块读取：
+ *   - 空闲超时(idleMs)：相邻数据块超过该间隔无数据，才判定模型/网络卡死；
+ *   - 总时长超时(totalMs)：整次请求兜底，按图像与 max_tokens 动态估算，避免无限等待。
+ * 非 2xx 响应不经过 SSE，直接读取服务端 JSON 错误体返回。
  * 返回轻量 Response 兼容对象，满足本文件的 ok/status/json/text 调用方式。
  */
-async function fetchWithTimeout(url, options, ms = AI_TIMEOUT_MS) {
+async function fetchWithTimeout(url, options, totalMs = AI_VISION_BASE_MS, idleMs = AI_IDLE_TIMEOUT_MS) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), ms);
+  let timer = null, timedOut = false;
+
+  const armIdle = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { timedOut = true; ctrl.abort('idle'); }, idleMs);
+  };
+  const armTotal = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { timedOut = true; ctrl.abort('total'); }, totalMs);
+  };
+
+  armTotal(); // 等待响应头阶段计入总时长
+  let response;
   try {
-    const response = await fetch(url, { ...options, signal: ctrl.signal });
-    const bodyText = await response.text(); // 响应正文也受超时控制
-    if (ctrl.signal.aborted) throw new Error(`请求超时(>${ms/1000}s)，模型响应正文未能完整返回`);
-    return {
-      ok: response.ok,
-      status: response.status,
-      text: async () => bodyText,
-      json: async () => JSON.parse(bodyText)
-    };
+    response = await fetch(url, { ...options, signal: ctrl.signal });
   } catch (e) {
-    if (ctrl.signal.aborted || e?.name === 'AbortError') {
-      throw new Error(`请求超时(>${ms/1000}s)，请检查网络、模型服务状态或稍后重试`);
+    clearTimeout(timer);
+    if (timedOut || e?.name === 'AbortError') {
+      throw new Error(`请求超时(>${totalMs/1000}s，等待响应头)，请检查网络、模型服务状态或稍后重试`);
     }
     if(e instanceof TypeError && /fetch|network|load failed/i.test(String(e.message||''))) {
       let host='当前 API 域名'; try{host=new URL(url).hostname;}catch(_){}
       throw new Error(`无法连接 ${host}。请核对 API Key 地域、网络/代理及浏览器跨域限制。原始错误：${e.message||'Failed to fetch'}`);
+    }
+    throw e;
+  }
+
+  // HTTP 错误状态码：服务端错误体为普通 JSON，不是 SSE；快速读完（仍受总超时保护）。
+  if(!response.ok) {
+    try {
+      const bodyText = await response.text();
+      return { ok:response.ok, status:response.status, text:async()=>bodyText, json:async()=>JSON.parse(bodyText) };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  // 正常响应：逐块读取 SSE，拼出与非流式等价的 chat.completion 完整对象。
+  armIdle();
+  let payload = null;
+  try {
+    const reader = (response.body && typeof response.body.getReader === 'function')
+      ? response.body.getReader() : null;
+    if(!reader) {
+      // 极旧环境无流式 body：退回整体读取，但仍受总超时保护。
+      const bodyText = await response.text();
+      return { ok:true, status:response.status, text:async()=>bodyText, json:async()=>JSON.parse(bodyText) };
+    }
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+
+    const handleLine = (rawLine) => {
+      const line = rawLine.replace(/\r$/, '');
+      if(!line || line.startsWith(':')) return; // 心跳/注释
+      if(!line.startsWith('data:')) return;
+      const data = line.slice(5).replace(/^\s+/, '');
+      if(data === '[DONE]') return;
+      let evt;
+      try { evt = JSON.parse(data); } catch(_) { return; }
+      if(!payload) {
+        // 以首个数据块为模板，保留非流式兼容字段
+        payload = { id:evt.id, object:'chat.completion', created:evt.created, model:evt.model, choices:[{index:0, message:{role:'assistant', content:''}, finish_reason:null}] };
+      }
+      const delta = evt.choices?.[0]?.delta;
+      if(delta) {
+        if(typeof delta.content === 'string') payload.choices[0].message.content += delta.content;
+        else if(Array.isArray(delta.content)) payload.choices[0].message.content += delta.content.map(p=>p?.text||'').join('');
+      }
+      const fr = evt.choices?.[0]?.finish_reason;
+      if(fr) payload.choices[0].finish_reason = fr;
+      if(evt.usage) payload.usage = evt.usage;
+    };
+
+    while(true) {
+      const { value, done } = await reader.read();
+      if(done) break;
+      armIdle(); // 每收到一块数据，就重置空闲计时
+      buffer += decoder.decode(value, {stream:true});
+      let idx;
+      while((idx = buffer.indexOf('\n')) >= 0) {
+        handleLine(buffer.slice(0, idx));
+        buffer = buffer.slice(idx + 1);
+      }
+    }
+    buffer += decoder.decode();
+    if(buffer.trim()) handleLine(buffer); // 末尾无换行的最后一行
+
+    if(!payload) throw new Error('模型流式响应为空：未收到任何数据块');
+    const bodyText = JSON.stringify(payload);
+    return { ok:true, status:response.status, text:async()=>bodyText, json:async()=>JSON.parse(bodyText) };
+  } catch (e) {
+    if (timedOut || e?.name === 'AbortError') {
+      const reason = ctrl.signal && ctrl.signal.reason;
+      if(reason === 'idle') throw new Error(`请求超时：模型连续${idleMs/1000}秒未返回数据（空闲中断），请检查网络、模型服务状态或稍后重试`);
+      throw new Error(`请求超时(>${totalMs/1000}s)：模型输出未能在限定时间内完整返回，可重试，或换用更快的模型/减少图片数量`);
+    }
+    if(e instanceof TypeError && /fetch|network|load failed/i.test(String(e.message||''))) {
+      let host='当前 API 域名'; try{host=new URL(url).hostname;}catch(_){}
+      throw new Error(`与 ${host} 的连接中断。请核对网络/代理及浏览器跨域限制。原始错误：${e.message||'Failed to fetch'}`);
     }
     throw e;
   } finally {
@@ -2220,7 +2321,7 @@ function deduplicateIssues(issues) {
   return result;
 }
 
-async function callAIOnce(preset, system, user, imageInput, temp=0.1, maxTokens=4096) {
+async function callAIOnce(preset, system, user, imageInput, temp=0.1, maxTokens=4096, retries=0) {
   if(!preset || !preset.url || !preset.model) throw new Error('未找到有效的模型配置，请在设置中重新选择模型');
   let dataUrl=null, base64=null;
   if(imageInput) {
@@ -2247,11 +2348,13 @@ async function callAIOnce(preset, system, user, imageInput, temp=0.1, maxTokens=
   };
   // Qwen3.7/3.8 官方支持 JSON Object 模式；旧供应商/旧模型使用解析器兼容模式。
   if(preset.jsonMode) body.response_format={type:'json_object'};
+  body.stream = true; // 走 SSE：用“空闲超时”代替“总时长一刀切”，避免长视觉JSON被误判超时
+  const totalMs = resolveTotalTimeoutMs(!!dataUrl, maxTokens, retries || 0);
   const resp=await fetchWithTimeout(`${preset.url}/chat/completions`,{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.api_key}`},
     body:JSON.stringify(body)
-  });
+  }, totalMs, AI_IDLE_TIMEOUT_MS);
   if(!resp.ok) {
     const e=await resp.json().catch(()=>({}));
     const message=e.error?.message||e.message||`HTTP ${resp.status}`;
@@ -2259,10 +2362,10 @@ async function callAIOnce(preset, system, user, imageInput, temp=0.1, maxTokens=
     const requestId=e.request_id||e.requestId||e.error?.request_id||'';
     if(preset.jsonMode && /response_format|json_object|unsupported|not support/i.test(message)) {
       // 兼容服务端尚未开放JSON模式的账号/区域：本次请求降级一次，但仍强制提示词+本地JSON验证。
-      const fallback={...body}; delete fallback.response_format;
+      const fallback={...body}; delete fallback.response_format; fallback.stream=true;
       const retry=await fetchWithTimeout(`${preset.url}/chat/completions`,{
         method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${config.api_key}`},body:JSON.stringify(fallback)
-      });
+      }, resolveTotalTimeoutMs(!!dataUrl, maxTokens, (retries||0)+1), AI_IDLE_TIMEOUT_MS);
       if(!retry.ok){const re=await retry.json().catch(()=>({}));throw new Error(`${re.error?.message||re.message||'模型请求失败'} (HTTP ${retry.status})`);}
       const rd=await retry.json();
       const rc=rd.choices?.[0]?.message?.content;
@@ -2291,12 +2394,13 @@ async function callAI(preset, system, user, imageInput, temp=0.1, maxTokens=4096
   let lastError;
   for(let attempt=0;attempt<2;attempt++) {
     try {
-      return await callAIOnce(preset, system, user, imageInput, temp, maxTokens);
+      return await callAIOnce(preset, system, user, imageInput, temp, maxTokens, attempt);
     } catch(err) {
       lastError=err;
       if(attempt!==0 || !isRetryableAIError(err)) throw err;
-      console.warn('当前模型请求遇到临时错误，1秒后只重试当前步骤：',err?.message||err);
-      setStatus('模型请求暂时异常，正在重试当前分析步骤（1/1）…');
+      const nextTotalMs=resolveTotalTimeoutMs(!!imageInput, maxTokens, attempt+1);
+      console.warn('当前模型请求遇到临时错误，1秒后只重试当前步骤（超时放宽至'+Math.round(nextTotalMs/1000)+'秒）：',err?.message||err);
+      setStatus('模型请求暂时异常，正在重试当前分析步骤（超时放宽至'+Math.round(nextTotalMs/1000)+'秒）…');
       await new Promise(resolve=>setTimeout(resolve,1000));
     }
   }
