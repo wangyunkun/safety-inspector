@@ -262,6 +262,18 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
 .hist-action-btn{flex:1;height:34px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface2);font-size:12px;font-weight:600;cursor:pointer;color:var(--text-secondary)}
 .hist-action-btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
 
+/* MODE BAR */
+.mode-bar{display:flex;gap:8px;padding:8px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.mode-btn{flex:1;border:1.5px solid var(--border);background:var(--surface2);border-radius:10px;padding:7px 8px;
+  display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;color:var(--text-secondary)}
+.mode-btn b{font-size:13px}
+.mode-btn span{font-size:10px;opacity:.85}
+.mode-btn.active{border-color:var(--primary);background:var(--primary-light);color:var(--primary)}
+.fast-banner{display:flex;align-items:center;gap:8px;background:var(--primary-light);border:1px solid #BFD3FF;
+  border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--primary-dark)}
+.fast-banner span{flex:1;line-height:1.5}
+.fast-banner button{border:none;background:var(--primary);color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0}
+
 /* ANIMATIONS */
 @keyframes fadeInUp{
   from{opacity:0;transform:translateY(12px)}
@@ -288,11 +300,20 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
         <option value="critical">高危风险筛查</option>
       </select>
     </div>
+    <div class="mode-bar">
+      <button class="mode-btn active" id="mode-fast" onclick="setMode('fast')">
+        <b>⚡ 快速识别</b><span>单次调用 · 现场出结果</span>
+      </button>
+      <button class="mode-btn" id="mode-deep" onclick="setMode('deep')">
+        <b>🔬 深度分析</b><span>多专家会诊 · 耗时较长</span>
+      </button>
+    </div>
     <div style="padding:8px 14px;font-size:12px;color:var(--text-hint);line-height:1.7">
       ⚡ 分析速度说明：<br>
       🚀 最快模式：Qwen3.8-Flash，适合快速批量初筛；<br>
       ⚖️ 平衡模式：Qwen3.7-Plus，兼顾速度与识别完整性；<br>
-      🎯 最全面模式：Qwen3.8-Max-0902，适合正式安全质量检查报告。
+      🎯 最全面模式：Qwen3.8-Max-0902，适合正式安全质量检查报告。<br>
+      ⚡ 快速识别：每张图只调用一次模型，现场先出结果；重点图片可在详情页点「深度复核」。
     </div>
     <div class="scroll-area" id="home-scroll">
       <div id="empty-state" class="empty-state">
@@ -307,7 +328,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
       <button class="btn-clear" onclick="clearAll()">🗑 清空</button>
       <button class="btn-copy-all" onclick="copyAll()">📋 快速复制</button>
       <button class="btn-save-hist" onclick="saveSessionToHistory()">💾 存档</button>
-      <button class="btn-analyze" onclick="startAnalysis()">▶ 开始分析</button>
+      <button class="btn-analyze" id="btn-analyze" onclick="startAnalysis()">⚡ 快速识别</button>
     </div>
     <div class="status-bar" id="status-bar">就绪</div>
   </div>
@@ -373,6 +394,16 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);
               <option value="qwen3.8-max-0902">Qwen3.8-Max-0902（推荐｜最高精度）</option>
               <option value="qwen3.7-plus">Qwen3.7-Plus（推荐｜速度与精度平衡）</option>
               <option value="qwen3.8-flash">Qwen3.8-Flash（推荐｜最快分析）</option>
+            </select>
+          </div>
+          <div class="settings-item">
+            <span class="settings-icon">⚡</span>
+            <span class="settings-label">快速识别模型</span>
+            <select class="settings-select" id="s-fast-provider">
+              <option value="qwen3.8-flash">Qwen3.8-Flash（最快，默认）</option>
+              <option value="qwen3.7-plus">Qwen3.7-Plus（速度与精度平衡）</option>
+              <option value="qwen3.8-max-0902">Qwen3.8-Max-0902（最高精度）</option>
+              <option value="same">同上方模型</option>
             </select>
           </div>
         </div>
@@ -540,10 +571,11 @@ const API_ENDPOINTS = {
   'cn-beijing': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
   'ap-southeast-1': 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'
 };
-function getProviderConfig() {
-  const provider = PROVIDERS[config.provider] || PROVIDERS['qwen3.8-max-0902'];
+function getProviderConfig(key) {
+  const k = key || config.provider;
+  const provider = PROVIDERS[k] || PROVIDERS['qwen3.8-max-0902'];
   // 硅基流动使用独立 Endpoint，不套用百炼地域。
-  if (config.provider === 'siliconflow') return {...provider};
+  if (k === 'siliconflow') return {...provider};
   const region = config.api_region || 'cn-beijing';
   return {...provider, url: API_ENDPOINTS[region] || API_ENDPOINTS['cn-beijing']};
 }
@@ -1297,7 +1329,7 @@ ${current || '当前没有问题记录。'}
 // =============================================
 // 状态
 // =============================================
-let tasks = [], config = {api_key:'', provider:'qwen3.8-max-0902', api_region:'cn-beijing'};
+let tasks = [], config = {api_key:'', provider:'qwen3.8-max-0902', api_region:'cn-beijing', fast_provider:'qwen3.8-flash'};
 let currentTab = 0, currentDetailTask = null;
 let editingItem = null, editingTaskId = null;
 let totalAnalyzing = 0, doneAnalyzing = 0;
@@ -1335,7 +1367,7 @@ async function saveSessionToHistory(label){
       tasks: doneTasks.map(t=>({
         id:t.id, name:t.name, originalName:t.originalName,
         dataUrl:t.dataUrl,   // 已压缩原图数据，方便回显
-        status:t.status,
+        status:t.status, mode:t.mode, elapsed:t.elapsed,
         data: (t.data||[]).map(iss=>({...iss})),
         review_items:(t.review_items||[]).map(x=>({...x})),
         analysis_meta:t.analysis_meta?({...t.analysis_meta}):null
@@ -1370,7 +1402,7 @@ async function restoreSession(session){
   if(!confirm(`恢复「${session.label}」到主页？\n当前主页内容将被替换。`)) return;
   tasks = session.tasks.map(t=>({...t, data:(t.data||[]).map(iss=>({...iss})), review_items:(t.review_items||[]).map(x=>({...x})), analysis_meta:t.analysis_meta||null}));
   document.getElementById('task-list').innerHTML='';
-  _aiQueue.length=0; _aiRunning=0; doneAnalyzing=0; totalAnalyzing=0;
+  _runId++; _aiQueue.length=0; _aiRunning=0; doneAnalyzing=0; totalAnalyzing=0;
   setProgress(0,false);
   tasks.forEach(task=>{
     addTaskRow(task);
@@ -1447,7 +1479,13 @@ function loadConfig() {
   config.api_region='cn-beijing';
   document.getElementById('s-apikey').value=config.api_key||'';
   document.getElementById('s-provider').value=PROVIDERS[config.provider]?config.provider:'qwen3.8-max-0902';
-  document.getElementById('s-region').value=API_ENDPOINTS[config.api_region]?config.api_region:'cn-beijing';
+  // 页面中没有 s-region 控件：原写法 getElementById('s-region').value 会抛 TypeError，
+  // 导致后面的企业内规恢复与 updateCount 全部不执行。改为有则赋值。
+  const regionEl=document.getElementById('s-region');
+  if(regionEl) regionEl.value=API_ENDPOINTS[config.api_region]?config.api_region:'cn-beijing';
+  if(config.fast_provider!=='same'&&!PROVIDERS[config.fast_provider]) config.fast_provider='qwen3.8-flash';
+  document.getElementById('s-fast-provider').value=config.fast_provider||'qwen3.8-flash';
+  initMode();
   loadCorpRulesFromStorage(); // 恢复企业内规库
 }
 function saveSettings() {
@@ -1455,6 +1493,7 @@ function saveSettings() {
   if(!key){showToast('⚠️ 请先输入 API Key');return;}
   config.api_key=key;
   config.provider=document.getElementById('s-provider').value;
+  config.fast_provider=document.getElementById('s-fast-provider').value;
   config.api_region=document.getElementById('s-region')?.value||'cn-beijing';
   try{
     localStorage.setItem('sc_cfg', JSON.stringify(config));
@@ -1804,7 +1843,7 @@ function previewImage(dataUrl, name){
    AI 并发队列 v3  (FIFO · 最大并发2 · 仅重试当前失败的API请求)
    ═══════════════════════════════════════════════════ */
 
-const AI_MAX_CONCURRENCY = 2;   // 最大并发数
+let   AI_MAX_CONCURRENCY = 2;   // 最大并发数（快速模式提高到4；全局视觉请求仍受 AI_MAX_VISION_INFLIGHT 限制）
 // 超时策略（V5.4）：不再用“60秒总时长”一刀切。
 // - IDLE  : 流式接收时，相邻数据块的最大间隔；模型持续输出就不会误杀。
 // - TOTAL : 整次请求的兜底上限，按“是否带图 + 输出token数”动态估算，重试再放宽。
@@ -2030,13 +2069,38 @@ function updateTaskStatus(id,status,detail){
   }
 }
 
-async function startAnalysis(){
+// ===== 分析模式：fast=快速识别（单次调用） / deep=深度分析（多专家会诊） =====
+let currentMode='fast', _batchStart=0, _runId=0;
+const FAST_MAX_DIM=1280;
+function fmtSec(s){return s<60?`${s}秒`:`${Math.floor(s/60)}分${s%60}秒`;}
+function initMode(){
+  try{const m=localStorage.getItem('sc_mode');if(m==='fast'||m==='deep') currentMode=m;}catch(e){}
+  setMode(currentMode,true);
+}
+function setMode(m,silent){
+  currentMode=m;
+  try{localStorage.setItem('sc_mode',m);}catch(e){}
+  document.getElementById('mode-fast').classList.toggle('active',m==='fast');
+  document.getElementById('mode-deep').classList.toggle('active',m==='deep');
+  const b=document.getElementById('btn-analyze');
+  if(b) b.textContent=m==='fast'?'⚡ 快速识别':'▶ 深度分析';
+  if(!silent) showToast(m==='fast'?'⚡ 快速模式：每张图单次识别':'🔬 深度模式：多专家会诊，耗时较长');
+}
+
+async function startAnalysis(opts){
   if(!config.api_key){showToast('⚠️ 请先在设置中配置 API Key');setTimeout(()=>switchTab(3),600);return;}
-  // 'ready' 状态已移除；只取 waiting / error 状态的任务
-  const waiting=tasks.filter(t=>t.status==='waiting'||t.status==='error');
+  const mode=(opts&&opts.mode)||currentMode;
+  // 'ready' 状态已移除；只取 waiting / error 状态的任务；深度复核时按指定 id
+  const waiting=(opts&&opts.ids)
+    ? tasks.filter(t=>opts.ids.includes(t.id)&&t.status!=='analyzing')
+    : tasks.filter(t=>t.status==='waiting'||t.status==='error');
   if(!waiting.length){showToast('没有待分析的图片');return;}
-  totalAnalyzing=waiting.length; doneAnalyzing=0;
-  setProgress(0,true); setStatus(`排队分析 ${waiting.length} 张...`);
+  // 上一批已结束则重置；仍在运行则累加，避免进度错乱
+  if(doneAnalyzing>=totalAnalyzing){doneAnalyzing=0;totalAnalyzing=0;_batchStart=Date.now();}
+  totalAnalyzing+=waiting.length;
+  AI_MAX_CONCURRENCY=mode==='fast'?4:2; // 快速模式每张图仅1次请求，可适当提高并发
+  const myRun=_runId;
+  setProgress(Math.round(doneAnalyzing/totalAnalyzing*100),true); setStatus(`排队分析 ${waiting.length} 张（${mode==='fast'?'快速识别':'深度分析'}）...`);
   const promptMode=document.getElementById('prompt-select').value;
   // 通过 enqueueAI 入 FIFO 队列，自动并发控制 + 重试
   waiting.forEach(task=>{
@@ -2044,11 +2108,14 @@ async function startAnalysis(){
     task.data=null; task.review_items=[]; task.analysis_meta=null; task.error=null;
     updateTaskStatus(task.id,'analyzing','⏳ 排队中...');
     // doneAnalyzing 计数放在队列外层，无论成功/失败/重试只计一次
-    enqueueAI(()=>analyzeTask(task,promptMode)).catch(err=>{
+    enqueueAI(()=>analyzeTask(task,promptMode,mode)).catch(err=>{
+      if(myRun!==_runId) return; // 已清空/恢复，忽略旧批次
       task.status='error'; task.error=err?.message||'网络/模型错误';
       updateTaskStatus(task.id,'error',task.error.slice(0,50));
+      if(currentDetailTask?.id===task.id) renderDetailContent(task);
       console.error('图片分析最终失败：',task.originalName||task.name,err);
     }).finally(()=>{
+      if(myRun!==_runId) return;
       doneAnalyzing++;
       setProgress(Math.round(doneAnalyzing / totalAnalyzing * 100), true);
       if(doneAnalyzing >= totalAnalyzing){
@@ -2056,13 +2123,13 @@ async function startAnalysis(){
         const total   = tasks.reduce((s,t) => s + (t.data?.length||0), 0);
         const errored = tasks.filter(t => t.status === 'error').length;
         if(errored > 0){
-          setStatus(`完成，${total}个问题，${errored}张失败`);
+          setStatus(`完成，${total}个问题，${errored}张失败 · 用时${fmtSec(Math.round((Date.now()-_batchStart)/1000))}`);
           showToast(`⚠️ ${errored}张分析失败，可重新点击分析`);
           const details = tasks.filter(t=>t.status==='error').slice(0,3).map((t,i)=>`${i+1}. ${t.originalName||t.name}\n${t.error||'未记录具体错误'}`).join('\n\n');
           // 只在批次结束时提醒一次，避免多张图片连续弹窗；原始细节同时写入控制台。
           setTimeout(()=>alert(`有 ${errored} 张照片分析失败。详细原因：\n\n${details.slice(0,3000)}\n\n若文本连接测试成功，请在“设置”中执行“测试首张图片视觉请求”。`),80);
         } else {
-          setStatus(`分析完成，共${total}个问题`);
+          setStatus(`分析完成，共${total}个问题 · 用时${fmtSec(Math.round((Date.now()-_batchStart)/1000))}`);
           showToast(`✅ 分析完成！发现${total}个问题`);
         }
       }
@@ -2070,7 +2137,126 @@ async function startAnalysis(){
   });
 }
 
-async function analyzeTask(task, promptMode) {
+// ---------- 快速识别：单次视觉调用，无分诊 / 多专家 / 复核 / AI汇总 ----------
+function buildFastPrompt(promptMode){
+  const names=Object.keys(REGULATION_DB);
+  const focus=names.map(n=>{
+    const hs=(REGULATION_DB[n].critical_hazards||[]).slice(0,3).map(h=>h.replace(/【致命】/g,'')).join('；');
+    return `- ${n}：${hs}`;
+  }).join('\n');
+  let modeNote='';
+  if(promptMode==='safety') modeNote='\n本次仅检查安全隐患，忽略质量问题。';
+  else if(promptMode==='quality') modeNote='\n本次仅检查质量缺陷，忽略安全隐患。';
+  else if(promptMode==='critical') modeNote='\n本次仅检查严重安全隐患，issues 只输出 risk_level 为"严重安全隐患"的条目。';
+  return `你是工程建设现场的资深安全质量总监，正在现场快速检查这张施工照片。请一次性给出结论，不要输出分析过程。${modeNote}
+
+## 检查重点（仅当照片中确实出现相关对象时才检查）
+${focus}
+
+## 排查顺序
+先对全图及九宫格各区域扫描：致命隐患优先（高处坠落/物体打击/坍塌/触电/机械伤害/特种机械作业无监护/临边洞口），再查严重问题，最后查一般问题。
+
+## 证据纪律
+1. 只报告照片中有直接证据的问题；不要因为“没拍到”某设施就判定缺失；不要用“可能”“疑似”；置信度<0.7的不报。
+2. 仅凭照片无法确认的内容（尺寸、间距、功能测试、隐蔽工程、检测记录）放入 review_items，不要判定为缺陷。
+3. 不要编造规范条文号；没有把握时 regulation 写“需核对现行适用规范”。
+4. 不同人员/设备/区域的问题分开写，同一问题不要重复；issues 最多8条、review_items 最多5条。
+5. category 从以下专业中选最相关的一个：${names.join('、')}
+
+## 输出格式（有效JSON对象，不要Markdown）
+{"scene":"一句话场景","issues":[{"risk_level":"严重安全隐患|一般安全隐患|严重质量缺陷|一般质量缺陷","category":"专业","issue":"含照片中位置的具体描述","regulation":"规范名称及条文号，无把握写需核对现行适用规范","correction":"一句具体可执行的整改措施","confidence":0.9,"evidence_location":"左上/中间/右下…","evidence_status":"照片可直接确认"}],"review_items":[{"item":"待现场核验项","location":"位置","reason":"照片无法确认的原因","priority":"高|中|低"}]}
+没有问题时 issues 输出 []`;
+}
+
+function getFastPreset(){
+  const k=config.fast_provider;
+  return getProviderConfig(k&&k!=='same'&&PROVIDERS[k]?k:config.provider);
+}
+
+// 快速识别使用最长边1280px的副本（更小的请求体 → 更快上传与视觉编码）；页面展示与历史仍用原压缩图
+async function getFastImageData(task){
+  try{
+    const img=await decodeImage(task.dataUrl, task.originalName||task.name);
+    const w0=img.naturalWidth||img.width, h0=img.naturalHeight||img.height;
+    const r=Math.min(1,FAST_MAX_DIM/Math.max(w0,h0));
+    if(r>=0.995) return task.dataUrl;
+    const c=document.createElement('canvas');
+    c.width=Math.max(1,Math.round(w0*r)); c.height=Math.max(1,Math.round(h0*r));
+    const ctx=c.getContext('2d',{alpha:false});
+    ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,c.width,c.height);
+    ctx.drawImage(img,0,0,c.width,c.height);
+    return c.toDataURL('image/jpeg',0.8);
+  }catch(e){
+    console.warn('快速识别缩图失败，改用原压缩图：',e?.message||e);
+    return task.dataUrl;
+  }
+}
+
+// 快速模型未开通/不存在时，自动回退主模型
+function isModelUnavailableError(err){
+  return /(model|模型).{0,40}(not\s*exist|does not exist|not\s*found|invalid|unsupported|permission|access|不存在|未开通|无权)|model_not_found|access\s*denied|HTTP\s*404/i.test(String(err?.message||err||''));
+}
+
+async function analyzeTaskFast(task, promptMode){
+  task.status='analyzing'; task.error=null;
+  const setMsg=m=>{
+    task.progress_msg=m;
+    updateTaskStatus(task.id,'analyzing',m);
+    if(currentDetailTask?.id===task.id) renderDetailContent(task);
+  };
+  try{
+    setMsg('⚡ 快速识别中…');
+    const imageData=await getFastImageData(task);
+    const system=buildFastPrompt(promptMode);
+    const user='请检查这张施工现场照片，直接输出有效JSON对象。';
+    let preset=getFastPreset();
+    let resp;
+    try{
+      resp=await withVisionSlot(()=>callAI(preset,system,user,imageData,0.1,2400));
+    }catch(err){
+      const main=getProviderConfig();
+      if(preset.model!==main.model && isModelUnavailableError(err)){
+        showToast('快速模型不可用，已改用主模型');
+        preset=main;
+        resp=await withVisionSlot(()=>callAI(preset,system,user,imageData,0.1,2400));
+      } else throw err;
+    }
+    // parseIssues 在 JSON 异常时会抛错（沿用 V5.3 的“解析失败不当作未发现问题”原则）
+    const rawIssues=parseIssues(resp,'')
+      .map(i=>({...i,category:REGULATION_DB[i.category]?i.category:'综合'}))
+      .filter(i=>i.confidence>=0.6);
+    const issues=deduplicateIssues(filterIssuesForMode(rawIssues,promptMode))
+      .sort((a,b)=>(RISK_STYLE[a.risk_level]?.priority??9)-(RISK_STYLE[b.risk_level]?.priority??9))
+      .slice(0,10)
+      .map((item,index)=>({...item,issue_id:item.issue_id||createIssueId(item),report_index:index+1}));
+    task.data=annotateWithCorpRules(issues);
+    task.review_items=deduplicateReviewItems(parseReviewItems(resp));
+    task.analysis_meta={model:preset.model,engine_version:'V5.3-fast',mode:'fast',analyzed_at:Date.now(),raw_issue_count:rawIssues.length,final_issue_count:task.data.length};
+    task.status='done';
+  }catch(err){
+    task.status='error';
+    const raw=String(err?.message||err||'未知网络/模型错误');
+    task.error=`快速识别失败：${raw}`;
+    updateTaskStatus(task.id,'error',task.error.slice(0,50));
+    if(currentDetailTask?.id===task.id) renderDetailContent(task);
+    console.error('快速识别失败：',{task:task.originalName||task.name,error:raw});
+    throw new Error(task.error);
+  }
+}
+
+async function analyzeTask(task, promptMode, mode){
+  mode=mode||'deep';
+  task.mode=mode;
+  const t0=Date.now();
+  if(mode==='fast') await analyzeTaskFast(task,promptMode);
+  else await analyzeTaskDeep(task,promptMode);
+  task.elapsed=Math.round((Date.now()-t0)/1000);
+  const c=task.data?.length||0, rv=task.review_items?.length||0;
+  updateTaskStatus(task.id,'done',`${c}个问题${rv?` · ${rv}项现场复核`:''} · ${fmtSec(task.elapsed)}`);
+  if(currentDetailTask?.id===task.id) renderDetailContent(task);
+}
+
+async function analyzeTaskDeep(task, promptMode) {
   task.status='analyzing'; task.error=null;
   try {
     const preset=getProviderConfig();
@@ -2785,7 +2971,7 @@ function renderDetailContent(task){
   const el=document.getElementById('detail-content');
   if(!el) return;
   el.innerHTML='';
-  if(task.status==='waiting') el.innerHTML=stateCard('⏳','等待分析','点击主页「▶ 开始分析」','#9CA3AF');
+  if(task.status==='waiting') el.innerHTML=stateCard('⏳','等待分析','点击主页底部按钮开始分析','#9CA3AF');
   else if(task.status==='analyzing') el.innerHTML=stateCard('🔄','正在分析...',task.progress_msg||'','#1A56DB');
   else if(task.status==='error') el.innerHTML=stateCard('❌','分析失败',task.error||'','#E02424');
   else if(task.status==='done'){
@@ -2813,6 +2999,16 @@ function renderDetailContent(task){
         task.review_items.map((x,i)=>`<div style="padding:8px 0;border-top:1px solid var(--border)"><strong>${i+1}. [${escHtml(x.priority||'中')}] ${escHtml(x.item)}</strong>${x.location?`<div style="font-size:12px;color:var(--text-secondary)">位置：${escHtml(x.location)}</div>`:''}<div style="font-size:12px;color:var(--text-secondary)">${escHtml(x.reason||'建议现场复核')}</div></div>`).join('');
       el.appendChild(box);
     }
+    if(task.mode==='fast'){
+      const fb=document.createElement('div');fb.className='fast-banner';
+      fb.innerHTML=`<span>⚡ 快速识别结果${task.elapsed!=null?' · 用时'+fmtSec(task.elapsed):''}；重点图片可再做多专家复核，降低漏检</span><button>🔬 深度复核</button>`;
+      fb.querySelector('button').onclick=()=>{
+        if(!confirm('对这张图进行多专家深度分析？\n将替换当前结果（含已做的编辑），耗时较长。')) return;
+        startAnalysis({mode:'deep',ids:[task.id]});
+        renderDetailContent(task);
+      };
+      el.insertBefore(fb,el.firstChild);
+    }
     if(task.analysis_meta){
       const meta=document.createElement('div');
       meta.style.cssText='font-size:10px;color:var(--text-hint);padding:8px 2px;text-align:right';
@@ -2825,15 +3021,15 @@ function renderDetailContent(task){
 function renderSummary(){
   const el=document.getElementById('summary-content');
   const allIssues=[];
-  tasks.forEach(t=>{if(t.status==='done'&&t.data) t.data.forEach(iss=>allIssues.push({...iss,_src:t.name,_tid:t.id}));});
+  tasks.forEach(t=>{if(t.status==='done'&&t.data) t.data.forEach(iss=>allIssues.push({iss,_src:t.name,_tid:t.id}));});
   if(!allIssues.length){
     el.innerHTML=`<div class="state-card fade-in"><div class="state-icon">📊</div><div class="state-title">暂无分析结果</div><div class="state-sub">请先在主页添加并分析图片</div></div>`;
     return;
   }
   el.innerHTML='';
-  const sorted=[...allIssues].sort((a,b)=>(RISK_STYLE[a.risk_level]?.priority??9)-(RISK_STYLE[b.risk_level]?.priority??9));
+  const sorted=[...allIssues].sort((a,b)=>(RISK_STYLE[a.iss.risk_level]?.priority??9)-(RISK_STYLE[b.iss.risk_level]?.priority??9));
   const counts={};
-  allIssues.forEach(x=>counts[x.risk_level]=(counts[x.risk_level]||0)+1);
+  allIssues.forEach(x=>counts[x.iss.risk_level]=(counts[x.iss.risk_level]||0)+1);
   const badgeHTML=['严重安全隐患','一般安全隐患','严重质量缺陷','一般质量缺陷'].filter(l=>counts[l]).map(l=>{
     const st=RISK_STYLE[l];
     return`<span class="stat-badge" style="background:${st.bg};color:${st.border};border-color:${st.border}">${st.icon} ${l.slice(0,4)} ${counts[l]}个</span>`;
@@ -2845,7 +3041,7 @@ function renderSummary(){
   sorted.forEach((item,i)=>{
     const src=document.createElement('div');
     src.className='src-label fade-in';src.textContent=`📷 ${item._src}`;el.appendChild(src);
-    el.appendChild(buildRiskCard(item,i+1,item._tid));
+    el.appendChild(buildRiskCard(item.iss,i+1,item._tid));
   });
 }
 
@@ -3047,7 +3243,7 @@ function clearAll(){
 }
 function _doClearAll(){
   tasks=[];
-  _aiQueue.length=0;
+  _runId++; _aiQueue.length=0;
   doneAnalyzing=0; totalAnalyzing=0;
   document.getElementById('task-list').innerHTML='';
   setProgress(0,false);
